@@ -21,3 +21,12 @@ export const SUBSCRIPTION_PLANS = [
   { letters: 4, price: 299, planType: 'standard_4_month', popular: true, name: 'Monthly Plan' },
   { letters: 8, price: 599, planType: 'premium_8_month', popular: false, name: 'Yearly Plan' },
 ] as const
+
+/**
+ * Plan configuration lookup by plan type
+ */
+export const PLAN_CONFIG: Record<string, { price: number, letters: number, planType: string, name: string }> = {
+  'one_time': { price: 299, letters: 1, planType: 'one_time', name: 'Single Letter' },
+  'standard_4_month': { price: 299, letters: 4, planType: 'standard_4_month', name: 'Monthly Plan' },
+  'premium_8_month': { price: 599, letters: 8, planType: 'premium_8_month', name: 'Yearly Plan' }
+} as const
