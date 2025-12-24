@@ -54,8 +54,7 @@ export interface Profile {
   id: string                    // UUID - FK to auth.users
   email: string                 // User email
   full_name: string | null      // Display name
-  role: UserRole                // User role
-  is_super_user: boolean        // Bypass subscription checks
+  role: UserRole                // User role: 'subscriber' | 'employee' | 'admin'
   phone: string | null          // Contact phone
   company_name: string | null   // Business name
   avatar_url: string | null     // Profile image
@@ -430,9 +429,10 @@ export async function validateAdminRequest(request: NextRequest): Promise<{
 
 // Letter allowance management
 check_letter_allowance(u_id: UUID): {
-  has_allowance: boolean
-  remaining: number
-  is_super: boolean
+  has_access: boolean
+  letters_remaining: number
+  plan_type: string
+  is_active: boolean
 }
 
 deduct_letter_allowance(u_id: UUID): boolean
@@ -529,7 +529,6 @@ get_employee_coupon(p_employee_id: UUID): EmployeeCoupon
 │   │     Allowance Check                 │                                   │
 │   │  - Free trial? (0 letters)          │                                   │
 │   │  - Has subscription credits?        │                                   │
-│   │  - Is super user?                   │                                   │
 │   └─────────────────────────────────────┘                                   │
 │      │                                                                      │
 │      ▼                                                                      │
@@ -591,13 +590,18 @@ get_employee_coupon(p_employee_id: UUID): EmployeeCoupon
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ATTORNEY REVIEW FLOW                              │
+│                        ATTORNEY REVIEW FLOW (Multi-Admin)                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   [Admin/Attorney]                                                          │
+│   [Admin User 1, Admin User 2, Admin User 3, ...]                          │
 │      │                                                                      │
 │      ▼                                                                      │
-│   /secure-admin-gateway/dashboard (Admin Dashboard)                         │
+│   /secure-admin-gateway/login (Admin Login)                                 │
+│      │                                                                      │
+│      │ Each admin uses their own email/password                             │
+│      │ + shared ADMIN_PORTAL_KEY                                            │
+│      ▼                                                                      │
+│   /secure-admin-gateway/dashboard (Shared Admin Dashboard)                 │
 │      │                                                                      │
 │      │ Lists letters with status: 'pending_review'                          │
 │      ▼                                                                      │
@@ -1243,28 +1247,28 @@ letters (1) ───────────────< (N) letter_audit_trai
 NEXT_PUBLIC_SUPABASE_URL=          # Public Supabase project URL (safe for client)
 NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Public anonymous key (safe for client)
 SUPABASE_SERVICE_ROLE_KEY=         # ⚠️ SERVER-ONLY: Full database access - never expose to client
+DATABASE_URL=                      # ⚠️ SERVER-ONLY: Direct database connection string
 
 # Stripe
 STRIPE_SECRET_KEY=                 # ⚠️ SERVER-ONLY: Stripe secret key
 STRIPE_WEBHOOK_SECRET=             # ⚠️ SERVER-ONLY: Webhook signature verification
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= # Public Stripe key (safe for client)
 
-# OpenAI
+# OpenAI (with Google AI fallback)
 OPENAI_API_KEY=                    # ⚠️ SERVER-ONLY: OpenAI API key
 
-# Email (Brevo SMTP)
-EMAIL_FROM=                        # Default sender email address
-EMAIL_FROM_NAME=                   # Default sender display name
-EMAIL_PROVIDER=smtp                # Email provider selection
+# Email (Resend with SMTP fallback)
+RESEND_API_KEY=                    # ⚠️ SERVER-ONLY: Resend API key
 
 # Redis (Upstash)
 KV_REST_API_URL=                   # ⚠️ SERVER-ONLY: Upstash REST API URL
 KV_REST_API_TOKEN=                 # ⚠️ SERVER-ONLY: Upstash authentication token
 
+# Admin Portal (Multi-Admin System)
+ADMIN_PORTAL_KEY=                  # ⚠️ SERVER-ONLY: Shared secret for admin login
+
 # Application
 NEXT_PUBLIC_SITE_URL=              # Public site URL for links in emails
-ADMIN_SECRET_KEY=                  # ⚠️ SERVER-ONLY: Admin authentication secret
-CSRF_SECRET=                       # ⚠️ SERVER-ONLY: CSRF token signing secret
 ```
 
 ---

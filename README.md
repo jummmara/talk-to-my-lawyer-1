@@ -9,8 +9,8 @@ AI-powered legal letter generation platform with mandatory attorney review.
 - **Database**: Supabase (PostgreSQL with RLS)
 - **Authentication**: Supabase Auth
 - **Payments**: Stripe
-- **AI**: OpenAI GPT-4 Turbo
-- **Email**: SendGrid (with fallback providers)
+- **AI**: OpenAI GPT-4 Turbo (with Google AI fallback)
+- **Email**: Resend (with SMTP fallback)
 - **Rate Limiting**: Upstash Redis
 
 ## Features
@@ -18,7 +18,7 @@ AI-powered legal letter generation platform with mandatory attorney review.
 - AI-generated legal letters with attorney review workflow
 - Subscription-based access with Stripe integration
 - Employee referral system with commission tracking
-- Admin portal for letter review and management
+- **Multi-admin portal** - Multiple admins can share letter review duties
 - Email queue system for reliable delivery
 - GDPR compliance (data export/deletion)
 
@@ -37,18 +37,32 @@ AI-powered legal letter generation platform with mandatory attorney review.
 Copy `.env.example` to `.env.local` and fill in:
 
 ```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+DATABASE_URL=
+
+# OpenAI (with Google AI as fallback)
 OPENAI_API_KEY=
+
+# Stripe
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Admin Portal (for multi-admin access)
 ADMIN_PORTAL_KEY=
-SENDGRID_API_KEY=
+
+# Email (Resend)
+RESEND_API_KEY=
+
+# Rate Limiting (Upstash Redis)
 KV_REST_API_URL=
 KV_REST_API_TOKEN=
+
+# Application
+NEXT_PUBLIC_SITE_URL=
 ```
 
 ### Development
@@ -67,7 +81,38 @@ pnpm dev
 
 ## Database Setup
 
-Run the SQL migrations in `/scripts` folder in order (001-023) in your Supabase SQL editor, then run migrations in `/supabase/migrations`.
+Run the SQL migrations in order:
+
+1. **Scripts**: Run `/scripts/*.sql` files in order (001-023) in Supabase SQL Editor
+2. **Migrations**: Run `/supabase/migrations/*.sql` files in order
+
+## Creating Admin Users
+
+The platform supports **multiple admin users** who share the same admin dashboard.
+
+### Create an Admin User
+
+```bash
+npx dotenv-cli -e .env.local -- npx tsx scripts/create-additional-admin.ts <email> <password>
+```
+
+**Example:**
+```bash
+npx dotenv-cli -e .env.local -- npx tsx scripts/create-additional-admin.ts admin@company.com SecurePass123!
+```
+
+### Admin Login
+
+1. Go to `/secure-admin-gateway/login`
+2. Enter email & password (their own credentials)
+3. Enter the Admin Portal Key (from `ADMIN_PORTAL_KEY` env var)
+
+### How Multi-Admin Works
+
+- Each admin has their own Supabase Auth account
+- All admins share the same dashboard at `/secure-admin-gateway`
+- Admin access is controlled by `role = 'admin'` in the `profiles` table
+- All admins can review, approve, and reject letters
 
 ## License
 

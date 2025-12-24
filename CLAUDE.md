@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Talk-To-My-Lawyer** is an AI-powered legal letter generation platform that provides professional legal document drafting services with mandatory attorney review. The platform follows a SaaS model with subscription-based pricing and includes employee referral functionality.
 
+**Multi-Admin System**: The platform supports multiple admin users who share the same admin dashboard for reviewing and approving letters.
+
 ## Tech Stack
 
 - **Frontend**: Next.js 16 with React 19 and TypeScript
@@ -69,9 +71,10 @@ pnpm health-check
 
 1. **User Authentication & Roles**
    - Subscriber (regular users)
-   - Admin (letter reviewers)
+   - Admin (letter reviewers) - **Multiple admins supported**
    - Employee (referral system)
    - Role-based routing and permissions
+   - Admin access controlled by `role = 'admin'` in database
 
 2. **Letter Generation Workflow**
    - User selects letter type (Demand, Cease & Desist, etc.)
@@ -113,7 +116,12 @@ Since this project uses manual testing, follow these guidelines:
    - Test role-based access control
    - Validate session management
 
-2. **Letter Generation**
+2. **Admin Access**
+   - Test admin login with multiple admin accounts
+   - Verify each admin can access `/secure-admin-gateway`
+   - Test admin actions (approve, reject, review letters)
+
+3. **Letter Generation**
    - Test each letter type with various inputs
    - Verify AI generation and fallback to Google AI if needed
    - Test attorney review process
@@ -166,3 +174,42 @@ Since this project uses manual testing, follow these guidelines:
 - Content Security Policy headers are configured
 - Input validation uses Zod schemas
 - Database uses Row Level Security (RLS)
+
+## Admin User Management
+
+### Creating Admin Users
+
+The platform uses a **multi-admin system** where multiple users can share admin duties.
+
+**To create an admin user:**
+```bash
+npx dotenv-cli -e .env.local -- npx tsx scripts/create-additional-admin.ts <email> <password>
+```
+
+**Example:**
+```bash
+npx dotenv-cli -e .env.local -- npx tsx scripts/create-additional-admin.ts admin@company.com SecurePass123!
+```
+
+### How Admin Authentication Works
+
+1. **User Account**: Admins are regular Supabase Auth users with `role = 'admin'` in the profiles table
+2. **Portal Key**: All admins share a common `ADMIN_PORTAL_KEY` for additional security
+3. **Shared Dashboard**: All admins access the same dashboard at `/secure-admin-gateway`
+
+### Admin Login Process
+
+1. Navigate to `/secure-admin-gateway/login`
+2. Enter email & password (individual Supabase Auth credentials)
+3. Enter Admin Portal Key (from environment variables)
+4. Access shared admin dashboard
+
+### Database Schema for Admins
+
+```sql
+-- Admin users are identified by role in profiles table
+SELECT id, email, role FROM profiles WHERE role = 'admin';
+
+-- To promote a user to admin:
+UPDATE profiles SET role = 'admin' WHERE email = 'user@example.com';
+```
