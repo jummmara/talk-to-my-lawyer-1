@@ -9,6 +9,8 @@ import type {
 import { BrevoProvider } from './providers/brevo'
 import { SMTPProvider, createSMTPProvider } from './providers/smtp'
 import { ConsoleProvider } from './providers/console'
+import { ResendProvider } from './providers/resend'
+import { SendGridProvider } from './providers/sendgrid'
 import { renderTemplate } from './templates'
 
 class EmailService {
@@ -18,20 +20,36 @@ class EmailService {
   private fromName: string
 
   constructor() {
+    // Initialize Resend provider (primary)
+    const resendApiKey = process.env.RESEND_API_KEY
+    if (resendApiKey) {
+      this.providers.set('resend', new ResendProvider(resendApiKey))
+    }
+
     // Initialize Brevo API provider
     this.providers.set('brevo', new BrevoProvider())
 
-    // Initialize Brevo SMTP provider with hardcoded credentials
+    // Initialize SendGrid provider
+    this.providers.set('sendgrid', new SendGridProvider())
+
+    // Initialize SMTP provider from environment variables
     try {
-      const smtpProvider = createSMTPProvider({
-        host: 'smtp-relay.brevo.com',
-        port: '587',
-        user: '992e47002@smtp-brevo.com',
-        pass: 'bskOEQlN6XqkucM'
-      })
-      this.providers.set('smtp', smtpProvider)
+      const smtpHost = process.env.SMTP_HOST
+      const smtpPort = process.env.SMTP_PORT
+      const smtpUser = process.env.SMTP_USER
+      const smtpPass = process.env.SMTP_PASS
+
+      if (smtpHost && smtpPort && smtpUser && smtpPass) {
+        const smtpProvider = createSMTPProvider({
+          host: smtpHost,
+          port: smtpPort,
+          user: smtpUser,
+          pass: smtpPass
+        })
+        this.providers.set('smtp', smtpProvider)
+      }
     } catch (error) {
-      console.warn('[EmailService] Failed to initialize Brevo SMTP provider:', error)
+      console.warn('[EmailService] Failed to initialize SMTP provider:', error)
     }
 
     this.providers.set('console', new ConsoleProvider())
@@ -51,8 +69,8 @@ class EmailService {
       }
     }
 
-    // Check provider priority order - SMTP first (working), then Brevo API, then console
-    const providerPriority: EmailProvider[] = ['smtp', 'brevo']
+    // Check provider priority order - Resend first, then Brevo, SendGrid, SMTP, console
+    const providerPriority: EmailProvider[] = ['resend', 'brevo', 'sendgrid', 'smtp']
 
     for (const providerName of providerPriority) {
       const provider = this.providers.get(providerName)

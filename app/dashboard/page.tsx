@@ -34,14 +34,34 @@ export default async function DashboardPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-success text-success-foreground hover:bg-success/90">Ready</Badge>
+        return (
+          <Badge className="bg-success text-success-foreground hover:bg-success/90 flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" aria-hidden="true" />
+            <span>Ready</span>
+          </Badge>
+        )
       case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>
+        return (
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
+            <span>Rejected</span>
+          </Badge>
+        )
       case 'pending_review':
       case 'under_review':
-        return <Badge className="bg-warning text-warning-foreground hover:bg-warning/90">In Review</Badge>
+        return (
+          <Badge className="bg-warning text-warning-foreground hover:bg-warning/90 flex items-center gap-1">
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            <span>In Review</span>
+          </Badge>
+        )
       default:
-        return <Badge variant="secondary">Draft</Badge>
+        return (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <FileText className="h-3 w-3" aria-hidden="true" />
+            <span>Draft</span>
+          </Badge>
+        )
     }
   }
 

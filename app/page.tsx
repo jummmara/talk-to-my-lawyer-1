@@ -435,7 +435,7 @@ export default function HomePage() {
               >
                 <Button
                   variant="outline"
-                  onClick={() => scrollToSection('letter-types')}
+                  onClick={() => scrollToSection('faqs')}
                   className="px-12 py-5 text-lg font-semibold rounded-xl border-2 border-[#199df4]/30 text-[#199df4] bg-white/80 backdrop-blur-sm hover:bg-sky-50 hover:border-[#199df4]/50 hover:shadow-xl transition-all duration-300 group ripple magnetic-btn cta-aurora"
                 >
                   <motion.div
@@ -449,7 +449,7 @@ export default function HomePage() {
                     >
                       <FileText className="h-5 w-5 mr-3" />
                     </motion.div>
-                    View Letter Types
+                    View FAQs
                     <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </motion.div>
                 </Button>
@@ -554,7 +554,7 @@ export default function HomePage() {
         </section>
 
         {/* Letter Types Section */}
-        <section id="letter-types" className="py-20 px-4 sm:px-6 lg:px-8">
+        <section id="faqs" className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <Badge className="bg-sky-100 text-[#199df4] mb-4">Most Popular</Badge>

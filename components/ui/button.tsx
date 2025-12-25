@@ -22,7 +22,7 @@ const buttonVariants = cva(
 
         // ⭐ SPECIAL PRICING BUTTON
         pricing:
-          "bg-white text-[#4600FF] hover:bg-white/90 shadow-sm dark:bg-white dark:text-[#4600FF]",
+          "bg-white text-blue-600 hover:bg-white/90 shadow-sm dark:bg-white dark:text-blue-600",
 
         // ⭐ ENHANCED CTA WITH ANIMATED RUNNING BORDER
         primary_animated:
