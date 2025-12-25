@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SubscriptionModal } from "@/components/subscription-modal"
 import { GenerateButton } from "@/components/generate-button"
+import { GenerationTrackerModal, type LetterStatus } from "@/components/generation-tracker-modal"
 import { createClient } from "@/lib/supabase/client"
 
 const LETTER_TYPES = [
@@ -87,6 +88,8 @@ export default function NewLetterPage() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [hasSubscription, setHasSubscription] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
+  const [showTrackerModal, setShowTrackerModal] = useState(false)
+  const [trackerStatus, setTrackerStatus] = useState<LetterStatus>("generating")
   const [formData, setFormData] = useState({
     senderName: "",
     senderAddress: "",
@@ -164,18 +167,24 @@ export default function NewLetterPage() {
 
     setLoading(true)
     setError(null)
+    setShowTrackerModal(true)
+    setTrackerStatus("generating")
 
     try {
-      const requestBody = {
-        letterType: selectedType,
+      const intakeData = {
         senderName: formData.senderName,
         senderAddress: formData.senderAddress,
         recipientName: formData.recipientName,
         recipientAddress: formData.recipientAddress,
         issueDescription: formData.issueDescription,
         desiredOutcome: formData.desiredOutcome,
-        amountDemanded: formData.amountDemanded || undefined,
-        supportingDocuments: formData.supportingDocuments || undefined,
+        amountDemanded: formData.amountDemanded ? Number(formData.amountDemanded) : undefined,
+        additionalDetails: formData.supportingDocuments || undefined,
+      }
+
+      const requestBody = {
+        letterType: selectedType,
+        intakeData,
       }
 
       const response = await fetch("/api/generate-letter", {
@@ -187,23 +196,28 @@ export default function NewLetterPage() {
       if (!response.ok) {
         const errorData = await response.json()
         if (errorData.needsSubscription) {
+          setShowTrackerModal(false)
           router.push("/dashboard/subscription")
           return
         }
         throw new Error(errorData.error || "Failed to generate letter")
       }
 
-      const { letterId: newLetterId, aiDraft: draft, isFreeTrial: freeTrialFlag } = await response.json()
+      const { letterId: newLetterId, aiDraft: draft, isFreeTrial: freeTrialFlag, status } = await response.json()
       setLetterId(newLetterId)
       setAiDraft(draft || "")
       setIsFreeTrial(!!freeTrialFlag)
       setShowPricingOverlay(!!freeTrialFlag)
+      if (status) {
+        setTrackerStatus(status as LetterStatus)
+      }
 
       // Automatically take the user to the letter status page (now queued for admin review)
       router.push(`/dashboard/letters/${newLetterId}?submitted=1`)
     } catch (err: any) {
       console.error("[v0] Letter creation error:", err)
       setError(err.message || "Failed to create letter")
+      setShowTrackerModal(false)
     } finally {
       setLoading(false)
     }
@@ -211,6 +225,11 @@ export default function NewLetterPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <GenerationTrackerModal
+        isOpen={showTrackerModal}
+        initialStatus={trackerStatus}
+        showClose={false}
+      />
       <SubscriptionModal
         show={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}

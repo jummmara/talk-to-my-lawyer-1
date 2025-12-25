@@ -6,9 +6,15 @@ import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { LetterActions } from '@/components/letter-actions'
-import { ReviewStatusModal } from '@/components/review-status-modal'
+import { GenerationTrackerModal, type LetterStatus } from '@/components/generation-tracker-modal'
 
-export default async function LetterDetailPage({ params }: { params: { id: string } }) {
+export default async function LetterDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string }
+  searchParams?: { submitted?: string }
+}) {
   const { id } = params
   const { profile } = await getUser()
   const supabase = await createClient()
@@ -70,11 +76,17 @@ export default async function LetterDetailPage({ params }: { params: { id: strin
     }
   ]
 
-  const showReviewModal = ['pending_review', 'under_review'].includes(letter.status)
+  const submittedParam = searchParams?.submitted === '1' || searchParams?.submitted === 'true'
+  const showReviewModal =
+    submittedParam || ['pending_review', 'under_review', 'generating'].includes(letter.status)
 
   return (
     <DashboardLayout>
-      <ReviewStatusModal show={showReviewModal} status={letter.status} />
+      <GenerationTrackerModal
+        isOpen={showReviewModal}
+        letterId={letter.id}
+        initialStatus={letter.status as LetterStatus}
+      />
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link href="/dashboard/letters" className="text-primary hover:text-primary/80 text-sm flex items-center gap-1 mb-4">
