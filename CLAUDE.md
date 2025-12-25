@@ -15,8 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **Authentication**: Supabase Auth
 - **Payments**: Stripe integration
-- **AI**: OpenAI GPT-4 Turbo with Google Generative AI as fallback
-- **Email**: SendGrid with nodemailer fallback
+- **AI**: OpenAI GPT-4 Turbo via Vercel AI Gateway
+- **Email**: Brevo (primary), with Resend, SendGrid, and SMTP providers available
 - **Rate Limiting**: Upstash Redis
 - **Package Manager**: pnpm
 
@@ -123,7 +123,7 @@ Since this project uses manual testing, follow these guidelines:
 
 3. **Letter Generation**
    - Test each letter type with various inputs
-   - Verify AI generation and fallback to Google AI if needed
+   - Verify AI generation via Vercel AI Gateway
    - Test attorney review process
    - Verify PDF generation and download
 
@@ -134,9 +134,9 @@ Since this project uses manual testing, follow these guidelines:
    - Verify webhooks handling
 
 4. **Email Services**
-   - Test SendGrid email delivery
-   - Verify nodemailer fallback
-   - Test email templates and formatting
+   - Test email delivery with configured provider (Brevo, Resend, SendGrid, or SMTP)
+   - Verify email templates and formatting
+   - Test fallback to console provider in development
 
 ### Test Data Management
 
@@ -164,7 +164,7 @@ Since this project uses manual testing, follow these guidelines:
 - Environment variables must be validated before starting the app
 - Stripe webhooks require proper endpoint configuration
 - AI services have rate limits - implement proper retry logic
-- Always test with both OpenAI and Google AI fallback
+- Vercel AI Gateway provides automatic retries and fallback handling
 
 ## Security Considerations
 

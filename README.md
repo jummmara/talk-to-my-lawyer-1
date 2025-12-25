@@ -9,8 +9,8 @@ AI-powered legal letter generation platform with mandatory attorney review.
 - **Database**: Supabase (PostgreSQL with RLS)
 - **Authentication**: Supabase Auth
 - **Payments**: Stripe
-- **AI**: OpenAI GPT-4 Turbo (with Google AI fallback)
-- **Email**: Resend (with SMTP fallback)
+- **AI**: OpenAI GPT-4 Turbo via Vercel AI Gateway
+- **Email**: Brevo (primary), Resend, SendGrid, or SMTP (configurable via EMAIL_PROVIDER)
 - **Rate Limiting**: Upstash Redis
 
 ## Features
@@ -43,7 +43,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 DATABASE_URL=
 
-# OpenAI (with Google AI as fallback)
+# OpenAI via Vercel AI Gateway
 OPENAI_API_KEY=
 
 # Stripe
@@ -54,8 +54,25 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 # Admin Portal (for multi-admin access)
 ADMIN_PORTAL_KEY=
 
-# Email (Resend)
+# Email Service (choose provider)
+EMAIL_PROVIDER=brevo  # Options: brevo, sendgrid, resend, smtp, console
+EMAIL_FROM=noreply@talk-to-my-lawyer.com
+EMAIL_FROM_NAME=Talk-To-My-Lawyer
+
+# Brevo (recommended)
+BREVO_API_KEY=
+
+# Or SendGrid
+SENDGRID_API_KEY=
+
+# Or Resend
 RESEND_API_KEY=
+
+# Or SMTP
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
 
 # Rate Limiting (Upstash Redis)
 KV_REST_API_URL=
