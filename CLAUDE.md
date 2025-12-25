@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Authentication**: Supabase Auth
 - **Payments**: Stripe integration
 - **AI**: OpenAI GPT-4 Turbo via Vercel AI Gateway
-- **Email**: Brevo (primary), with Resend, SendGrid, and SMTP providers available
+- **Email**: Resend (primary), with Brevo, SendGrid, and SMTP providers available
 - **Rate Limiting**: Upstash Redis
 - **Package Manager**: pnpm
 
@@ -134,7 +134,7 @@ Since this project uses manual testing, follow these guidelines:
    - Verify webhooks handling
 
 4. **Email Services**
-   - Test email delivery with configured provider (Brevo, Resend, SendGrid, or SMTP)
+   - Test email delivery with configured provider (Resend, Brevo, SendGrid, or SMTP)
    - Verify email templates and formatting
    - Test fallback to console provider in development
 
