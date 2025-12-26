@@ -9,14 +9,14 @@ import { ArrowLeft, User, Mail, Phone, Building, FileText, Calendar, Clock } fro
 import { format } from 'date-fns'
 import { ReviewLetterModal } from '@/components/review-letter-modal'
 
-export default async function ReviewLetterDetailPage({ params }: { params: { id: string } }) {
+export default async function ReviewLetterDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Verify admin authentication
   const authenticated = await isAdminAuthenticated()
   if (!authenticated) {
     redirect('/secure-admin-gateway/login')
   }
 
-  const { id } = params
+  const { id } = await params
   const supabase = await createClient()
 
   // Fetch letter with subscriber details

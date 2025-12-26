@@ -12,10 +12,11 @@ export default async function LetterDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string }
-  searchParams?: { submitted?: string }
+  params: Promise<{ id: string }>
+  searchParams?: Promise<{ submitted?: string }>
 }) {
-  const { id } = params
+  const { id } = await params
+  const resolvedSearchParams = await searchParams
   const { profile } = await getUser()
   const supabase = await createClient()
 
@@ -76,7 +77,7 @@ export default async function LetterDetailPage({
     }
   ]
 
-  const submittedParam = searchParams?.submitted === '1' || searchParams?.submitted === 'true'
+  const submittedParam = resolvedSearchParams?.submitted === '1' || resolvedSearchParams?.submitted === 'true'
   const showReviewModal =
     submittedParam || ['pending_review', 'under_review', 'generating'].includes(letter.status)
 
