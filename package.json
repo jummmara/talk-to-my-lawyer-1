@@ -17,6 +17,7 @@
     "audit:fix": "./scripts/fix-security.sh",
     "update:packages": "pnpm update --latest",
     "autocommit": "git add -A && git diff --staged --quiet || (git commit -m \"Auto-commit: $(date)\" && git push origin main)",
+    "autocommit:script": "./scripts/autocommit.sh",
     "commit": "git add -A && git commit -m",
     "push": "git push origin main",
     "save": "pnpm run commit -- \"Auto-save: $(date)\" && pnpm run push"
