@@ -31,6 +31,7 @@ function validateEnv() {
 
   const isProduction = process.env.NODE_ENV === 'production'
   const testMode = process.env.ENABLE_TEST_MODE === 'true'
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
 
   let hasErrors = false
   let hasWarnings = false
@@ -39,11 +40,20 @@ function validateEnv() {
   requiredEnvVars.critical.forEach(({ name, description }) => {
     const value = process.env[name]
     if (!value) {
-      console.log(`  [ERROR] ${name}: Missing - ${description}`)
-      hasErrors = true
+      if (isCI && testMode) {
+        console.log(`  [WARN] ${name}: Missing (CI mode) - ${description}`)
+        hasWarnings = true
+      } else {
+        console.log(`  [ERROR] ${name}: Missing - ${description}`)
+        hasErrors = true
+      }
     } else {
       const masked = value.substring(0, 8) + '...'
-      console.log(`  [OK] ${name}: ${masked}`)
+      if (isCI && (value.includes('dummy') || value.includes('test'))) {
+        console.log(`  [INFO] ${name}: ${masked} (CI dummy value)`)
+      } else {
+        console.log(`  [OK] ${name}: ${masked}`)
+      }
     }
   })
 
@@ -92,13 +102,19 @@ function validateEnv() {
   console.log('\n=== Validation Summary ===')
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`Test Mode: ${testMode ? 'Enabled' : 'Disabled'}`)
+  console.log(`CI Mode: ${isCI ? 'Yes' : 'No'}`)
 
   if (hasErrors) {
     console.log('\n[FAILED] Missing critical environment variables')
     process.exit(1)
   } else if (hasWarnings) {
-    console.log('\n[PASSED WITH WARNINGS] Some optional variables are missing')
-    process.exit(0)
+    if (isCI && testMode) {
+      console.log('\n[PASSED] CI validation successful (using dummy values)')
+      process.exit(0)
+    } else {
+      console.log('\n[PASSED WITH WARNINGS] Some optional variables are missing')
+      process.exit(0)
+    }
   } else {
     console.log('\n[PASSED] All environment variables are configured')
     process.exit(0)

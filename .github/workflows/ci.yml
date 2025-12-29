@@ -44,5 +44,6 @@ jobs:
         continue-on-error: true
 
       - name: Check environment setup
-        run: pnpm run validate-env
-        continue-on-error: true
+        run: |
+          cp .env.ci .env
+          pnpm run validate-env
