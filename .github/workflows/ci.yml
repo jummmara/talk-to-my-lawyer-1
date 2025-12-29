@@ -49,6 +49,7 @@ jobs:
             "SUPABASE_SERVICE_ROLE_KEY"
             "STRIPE_SECRET_KEY"
             "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+            "STRIPE_WEBHOOK_SECRET"
             "ADMIN_EMAIL"
             "ADMIN_PORTAL_KEY"
             "CRON_SECRET"
@@ -84,6 +85,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PORTAL_KEY: ${{ secrets.ADMIN_PORTAL_KEY }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
@@ -98,8 +100,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://www.talk-to-my-lawyer.com' }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_TEST_MODE: false
 
       - name: Check environment setup
@@ -131,8 +133,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
           # App URLs
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://www.talk-to-my-lawyer.com' }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
           # Mode Configuration
           ENABLE_TEST_MODE: false
