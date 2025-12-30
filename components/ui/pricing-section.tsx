@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { TimelineContent } from "@/components/ui/timeline-animation";
 import { TextMorph } from "@/components/ui/text-morph";
 import NumberFlow from "@number-flow/react";
-import { FileText, CheckCheck, Scale, Zap } from "lucide-react";
+import { FileText, CheckCheck, Scale } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -13,64 +13,85 @@ const plans = [
     name: "Single Letter",
     description:
       "Perfect for one-time legal needs. Get a professional letter without commitment.",
-    price: 299,
-    yearlyPrice: 299,
+    price: 200,
     buttonText: "Get Started",
     buttonVariant: "outline" as const,
     features: [
       { text: "1 Professional Legal Letter", icon: <FileText size={20} /> },
-      { text: "Attorney Review Included", icon: <Scale size={20} /> },
+      { text: "Attorney approved", icon: <Scale size={20} /> },
       { text: "PDF Download", icon: <CheckCheck size={20} /> },
     ],
     includes: [
-      "Includes:",
-      "AI-powered draft",
-      "Professional formatting",
-      "Email delivery",
-      "48-hour turnaround",
+      "Every letter includes:",
+      "Sent by lawyer's email",
+      "On lawyer's letterhead",
+      "Professionally formatted",
+      "Up to 48 hours turnaround",
+    ],
+  },
+  {
+    name: "With Membership",
+    description:
+      "Best value — $50 per letter with membership.",
+    price: 50,
+    unit: "per letter",
+    buttonText: "Get Started",
+    buttonVariant: "default" as const,
+    popular: true,
+    features: [
+      { text: "Membership pricing", icon: <FileText size={20} /> },
+      { text: "Attorney approved", icon: <Scale size={20} /> },
+      { text: "PDF Download", icon: <CheckCheck size={20} /> },
+    ],
+    includes: [
+      "Every letter includes:",
+      "Sent by lawyer's email",
+      "On lawyer's letterhead",
+      "Professionally formatted",
+      "Up to 48 hours turnaround",
     ],
   },
   {
     name: "Monthly Plan",
     description:
-      "Best value for ongoing legal communication needs with 4 letters per month.",
-    price: 299,
-    yearlyPrice: 299,
+      "$200 per month for ongoing legal communication needs.",
+    price: 200,
+    unit: "per month",
     buttonText: "Get Started",
-    buttonVariant: "default" as const,
-    popular: true,
+    buttonVariant: "outline" as const,
     features: [
-      { text: "4 Letters Per Month", icon: <FileText size={20} /> },
-      { text: "Attorney Review", icon: <Scale size={20} /> },
-      { text: "Priority Support", icon: <Zap size={20} /> },
+      { text: "Monthly membership", icon: <FileText size={20} /> },
+      { text: "Attorney approved", icon: <Scale size={20} /> },
+      { text: "PDF Download", icon: <CheckCheck size={20} /> },
     ],
     includes: [
-      "Everything in Single Letter, plus:",
-      "Cancel anytime",
-      "Roll over unused letters",
-      "Priority queue",
-      "24-hour turnaround",
+      "Every letter includes:",
+      "Sent by lawyer's email",
+      "On lawyer's letterhead",
+      "Professionally formatted",
+      "Up to 48 hours turnaround",
     ],
   },
   {
     name: "Annual Plan",
     description:
-      "Maximum value with 8 letters per year. Save 50% compared to monthly.",
-    price: 599,
-    yearlyPrice: 599,
+      "$19.99 per month — includes 48 letters per year.",
+    price: 19.99,
+    unit: "per month",
     buttonText: "Get Started",
     buttonVariant: "outline" as const,
+    popular: false,
     features: [
-      { text: "8 Letters Per Year", icon: <FileText size={20} /> },
-      { text: "Attorney Review", icon: <Scale size={20} /> },
-      { text: "Premium Support", icon: <Zap size={20} /> },
+      { text: "48 letters per year", icon: <FileText size={20} /> },
+      { text: "Attorney approved", icon: <Scale size={20} /> },
+      { text: "PDF Download", icon: <CheckCheck size={20} /> },
     ],
     includes: [
-      "Everything in Monthly, plus:",
-      "50% cost savings",
-      "Custom templates",
-      "Dedicated support",
-      "12-hour turnaround",
+      "Every letter includes:",
+      "Sent by lawyer's email",
+      "On lawyer's letterhead",
+      "Professionally formatted",
+      "Up to 48 hours turnaround",
     ],
   },
 ];
@@ -101,7 +122,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
           )}
-          <span className="relative">One-Time</span>
+          <span className="relative">Single Letter</span>
         </button>
 
         <button
@@ -120,7 +141,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
             />
           )}
           <span className="relative flex items-center gap-2">
-            Subscription
+            Membership
             <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-[#0d8ae0]">
               Best Value
             </span>
@@ -176,7 +197,7 @@ export default function PricingSection() {
           customVariants={revealVariants}
           className="md:text-6xl sm:text-4xl text-3xl font-medium text-gray-900 mb-4"
         >
-          Plans that work best for your{" "}
+          Simple, Transparent{" "}
           <TimelineContent
             as="span"
             animationNum={1}
@@ -184,8 +205,8 @@ export default function PricingSection() {
             customVariants={revealVariants}
             className="border border-dashed border-[#199df4] px-2 py-1 rounded-xl bg-sky-100 capitalize inline-block"
           >
-            <TextMorph 
-              words={["Legal Needs", "Lawyer Letter", "Attorney Reviewed"]} 
+            <TextMorph
+              words={["Pricing", "Plans", "Options"]}
               interval={3000}
             />
           </TimelineContent>
@@ -198,7 +219,7 @@ export default function PricingSection() {
           customVariants={revealVariants}
           className="sm:text-base text-sm text-gray-600 sm:w-[70%] w-[80%] mx-auto"
         >
-          Professional legal letters drafted by attorneys, delivered in 24-48 hours. Choose the plan that fits your needs.
+          Professional legal letters custom made for your situation. Sent by lawyer's email with up to 48 hours turnaround.
         </TimelineContent>
       </div>
 
@@ -212,7 +233,7 @@ export default function PricingSection() {
         <PricingSwitch onSwitch={togglePricingPeriod} />
       </TimelineContent>
 
-      <div className="grid md:grid-cols-3 max-w-7xl gap-4 py-6 mx-auto relative z-10">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 max-w-7xl gap-4 py-6 mx-auto relative z-10">
         {plans.map((plan, index) => (
           <TimelineContent
             key={plan.name}
@@ -228,7 +249,7 @@ export default function PricingSection() {
             >
               <CardHeader className="text-left">
                 <div className="flex justify-between">
-                  <h3 className="text-3xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {plan.name}
                   </h3>
                   {plan.popular && (
@@ -248,8 +269,8 @@ export default function PricingSection() {
                       className="text-4xl font-semibold"
                     />
                   </span>
-                  <span className="text-gray-600 ml-1">
-                    {plan.name === "Single Letter" ? "/letter" : plan.name === "Monthly Plan" ? "/month" : "/year"}
+                  <span className="text-gray-600 ml-1 text-sm">
+                    {plan.unit || "/letter"}
                   </span>
                 </div>
               </CardHeader>
@@ -257,11 +278,11 @@ export default function PricingSection() {
               <CardContent className="pt-0">
                 <Link href="/auth/signup">
                   <button
-                    className={`w-full mb-6 p-4 text-xl rounded-xl transition-all duration-300 ${
+                    className={`w-full mb-6 p-4 text-lg rounded-xl transition-all duration-300 ${
                       plan.popular
                         ? "bg-gradient-to-t from-[#0d8ae0] to-[#199df4] shadow-lg shadow-[#199df4]/40 border border-[#4facfe] text-white hover:shadow-xl hover:scale-105"
                         : plan.buttonVariant === "outline"
-                          ? "bg-linear-to-t from-neutral-900 to-neutral-600  shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:shadow-xl hover:scale-105"
+                          ? "bg-linear-to-t from-neutral-900 to-neutral-600 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:shadow-xl hover:scale-105"
                           : ""
                     }`}
                   >

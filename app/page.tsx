@@ -762,12 +762,12 @@ export default function HomePage() {
                 {
                   icon: Zap,
                   title: 'Lightning Fast',
-                  desc: 'Generate professional legal letters in minutes, not hours',
+                  desc: 'Professional legal letters in minutes, not hours',
                 },
                 {
                   icon: Users,
-                  title: 'Attorney Reviewed',
-                  desc: 'Every letter is reviewed by qualified legal professionals',
+                  title: 'Attorney Approved',
+                  desc: 'Every letter is approved by qualified legal professionals',
                 },
                 {
                   icon: Shield,
@@ -811,10 +811,10 @@ export default function HomePage() {
               <div>
                 <h3 className="font-semibold mb-4 glow-text">Services</h3>
                 <ul className="space-y-2 text-blue-200">
-                  <li>Tenant Disputes</li>
-                  <li>HR Issues</li>
+                  <li>Cease and Desist</li>
+                  <li>Breach of Contract</li>
+                  <li>Demand for Payment</li>
                   <li>Debt Collection</li>
-                  <li>Cease & Desist</li>
                 </ul>
               </div>
 
