@@ -60,7 +60,7 @@ export async function handleCSRFTokenRequest(): Promise<NextResponse> {
 export async function updateLetterStatus(params: {
   letterId: string
   status: string
-  additionalFields?: Record<string, any>
+  additionalFields?: Record<string, unknown>
   auditAction: string
   auditNotes: string
 }) {
@@ -124,7 +124,7 @@ export async function notifyLetterOwner(params: {
   userId: string
   letterId: string
   templateName: string
-  templateData: Record<string, any>
+  templateData: Record<string, unknown>
 }) {
   const supabase = await createClient()
   const { userId, letterId, templateName, templateData } = params
