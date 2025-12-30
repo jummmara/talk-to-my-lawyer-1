@@ -568,10 +568,10 @@ export default function HomePage() {
               </div>
               <div className="scroll-reveal stagger-4 counter-animate">
                 <div className="text-4xl font-bold mb-2 text-gradient-animated animate-pulse-scale">
-                  24 Hours
+                  Up to 48 Hours
                 </div>
                 <div className="text-blue-200 transition-colors duration-200 hover:text-white">
-                  Average Delivery
+                  Turnaround Time
                 </div>
               </div>
             </div>
@@ -579,14 +579,13 @@ export default function HomePage() {
         </section>
 
         {/* Letter Types Section */}
-        <section id="faqs" className="py-20 px-4 sm:px-6 lg:px-8">
+        <section id="letter-types" className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <Badge className="bg-sky-100 text-[#199df4] mb-4">Most Popular</Badge>
               <h2 className="text-4xl font-bold mb-4 shiny-text">Professional Legal Letters</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Choose from our comprehensive library of lawyer-drafted letter templates. Each
-                letter is customized for your specific situation and reviewed by licensed attorneys.
+                Custom made letters for your specific situation, sent by lawyer's email.
               </p>
             </div>
 
@@ -607,52 +606,46 @@ export default function HomePage() {
             >
               {[
                 {
-                  icon: Home,
-                  title: 'Tenant Disputes',
-                  desc: 'Security deposits, lease violations, habitability issues, and more',
-                  price: '$299',
-                  color: 'blue',
-                  gradient: 'from-[#199df4] to-[#0d8ae0]',
-                },
-                {
-                  icon: Briefcase,
-                  title: 'HR & Employment',
-                  desc: 'Workplace harassment, wrongful termination, wage disputes',
-                  price: '$299',
-                  color: 'green',
-                  gradient: 'from-[#00c9a7] to-[#00a383]',
+                  icon: Shield,
+                  title: 'Cease and Desist',
+                  desc: 'Stop harassment, defamation, copyright infringement, and more',
+                  color: 'orange',
+                  gradient: 'from-[#ffa726] to-[#ff9800]',
                 },
                 {
                   icon: AlertCircle,
-                  title: 'Debt Collection',
-                  desc: 'Collect money owed to you from clients, customers, or businesses',
-                  price: '$299',
+                  title: 'Breach of Contract',
+                  desc: 'Contract violations, non-payment, failure to deliver goods or services',
                   color: 'red',
                   gradient: 'from-[#ff6b6b] to-[#ee5a52]',
                 },
                 {
+                  icon: FileText,
+                  title: 'Demand for Payment',
+                  desc: 'Collect money owed to you from clients, customers, or businesses',
+                  color: 'blue',
+                  gradient: 'from-[#199df4] to-[#0d8ae0]',
+                },
+                {
+                  icon: Scale,
+                  title: 'Pre-Litigation Settlement',
+                  desc: 'Settlement demands before filing a lawsuit, negotiate disputes',
+                  color: 'green',
+                  gradient: 'from-[#00c9a7] to-[#00a383]',
+                },
+                {
                   icon: Users,
-                  title: 'Personal Disputes',
-                  desc: 'Neighbor disputes, contract breaches, personal injury claims',
-                  price: '$299',
+                  title: 'Debt Collection',
+                  desc: 'Professional debt collection letters for outstanding payments',
                   color: 'blue',
                   gradient: 'from-[#4facfe] to-[#199df4]',
                 },
                 {
-                  icon: Building,
-                  title: 'Property Issues',
-                  desc: 'Property damage, boundary disputes, easement issues',
-                  price: '$299',
+                  icon: Briefcase,
+                  title: 'And More',
+                  desc: 'Contact us for any other legal letter needs you may have',
                   color: 'blue',
                   gradient: 'from-[#0d8ae0] to-[#0066cc]',
-                },
-                {
-                  icon: Shield,
-                  title: 'Cease & Desist',
-                  desc: 'Stop harassment, defamation, copyright infringement, and more',
-                  price: '$299',
-                  color: 'orange',
-                  gradient: 'from-[#ffa726] to-[#ff9800]',
                 },
               ].map((type, index) => (
                 <motion.div
