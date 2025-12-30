@@ -33,12 +33,40 @@ REDIS_URL
 KV_URL
 ```
 
-## App URLs
+## App URLs (Secrets or Variables)
 
 ```
 NEXT_PUBLIC_APP_URL
 NEXT_PUBLIC_SITE_URL
 NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
 ```
+
+---
+
+## Production Deployment (Vercel)
+
+For the production deployment workflow, also add these secrets:
+
+### Vercel Deployment Secrets
+
+```
+VERCEL_TOKEN          # Your Vercel API token
+VERCEL_ORG_ID         # Your Vercel organization ID
+VERCEL_PROJECT_ID     # Your Vercel project ID
+```
+
+### GitHub Variables (for Production)
+
+Go to Settings → Secrets and variables → Actions → Variables:
+
+```
+PRODUCTION_URL=https://www.talk-to-my-lawyer.com
+```
+
+**Finding your Vercel credentials:**
+
+1. **VERCEL_TOKEN**: Create at https://vercel.com/account/tokens
+2. **VERCEL_ORG_ID**: Found in `vercel.json` or Vercel project settings
+3. **VERCEL_PROJECT_ID**: Found in `.vercel/project.json` or project settings
 
 ⚠️ **Security Note**: Never commit real API keys or secrets to your repository. Always use GitHub Secrets for sensitive data.
