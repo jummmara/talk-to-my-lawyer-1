@@ -2,7 +2,7 @@
 
 **Date**: December 28, 2025
 **Deployment**: Production (Vercel)
-**URL**: https://www.talk-to-my-lawyer.com
+**URL**: <https://www.talk-to-my-lawyer.com>
 **Git Commit**: f9218ce5ff8cc58583b2dac120f38fac0275a1e3
 **Branch**: main
 
@@ -11,8 +11,9 @@
 ## 🚀 Deployment Status
 
 ### Production Environment
-- **Primary Domain**: https://www.talk-to-my-lawyer.com
-- **Deployment URL**: https://talk-to-my-lawyer-g8xzy6k5j-moizs-projects-34494b93.vercel.app
+
+- **Primary Domain**: <https://www.talk-to-my-lawyer.com>
+- **Deployment URL**: <https://talk-to-my-lawyer-g8xzy6k5j-moizs-projects-34494b93.vercel.app>
 - **Vercel Project**: moizs-projects-34494b93/talk-to-my-lawyer
 - **Last Deployment**: December 28, 2025 (~9 minutes ago)
 
@@ -21,6 +22,7 @@
 ## 💳 Stripe Configuration (Updated & Working)
 
 ### Environment Variables in Production
+
 ```bash
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51Sj4Yn... (Encrypted)
 STRIPE_SECRET_KEY=sk_test_51Sj4Yn... (Encrypted)
@@ -31,6 +33,7 @@ STRIPE_API_VERSION=2025-11-17.clover
 ```
 
 ### Stripe Features Active
+
 - ✅ Checkout flow working
 - ✅ Payment processing via Stripe Checkout
 - ✅ Webhook endpoint: `/api/stripe/webhook`
@@ -42,11 +45,13 @@ STRIPE_API_VERSION=2025-11-17.clover
 ## 👨‍⚖️ Admin Dashboard & Review Centre
 
 ### Access Route
+
 - **URL**: `/secure-admin-gateway`
 - **Login Page**: `/secure-admin-gateway/login`
 - **Review Center**: `/secure-admin-gateway/review`
 
 ### Authentication (3-Factor)
+
 1. Email (individual admin account)
 2. Password (individual admin account)
 3. Portal Key (shared secret: `ADMIN_PORTAL_KEY` env variable)
@@ -54,12 +59,14 @@ STRIPE_API_VERSION=2025-11-17.clover
 ### Admin Capabilities
 
 #### 1. **Analytics Dashboard** (`/secure-admin-gateway/dashboard/analytics`)
+
 - Total users, subscribers, employees, admins
 - Letter statistics (total, pending, approved, rejected)
 - Revenue analytics and trend analysis
 - Commission tracking
 
 #### 2. **Review Center** (`/secure-admin-gateway/review`) - ⭐ MAIN FEATURE
+
 - View all submitted letters
 - Letter status tracking:
   - `draft` - Initial generation
@@ -79,35 +86,41 @@ STRIPE_API_VERSION=2025-11-17.clover
 - **Audit Trail**: All actions logged to `letter_audit_trail` table
 
 #### 3. **Users Management** (`/secure-admin-gateway/dashboard/users`)
+
 - Complete user directory
 - User details (profile, subscription, letters, usage)
 - Role distribution (Subscribers, Employees, Admins, Super Users)
 
 #### 4. **Letters Management** (`/secure-admin-gateway/dashboard/letters`)
+
 - All letters across all users
 - Bulk actions (approve/reject multiple)
 - Status filtering and search
 - Letter details and history
 
 #### 5. **Coupons Management** (`/secure-admin-gateway/dashboard/coupons`)
+
 - Admin-created coupons
 - Employee-generated coupons
 - Usage analytics and tracking
 - Employee mapping for commissions
 
 #### 6. **Commissions** (`/secure-admin-gateway/dashboard/commissions`)
+
 - Pending payout requests
 - Commission processing (approve/reject)
 - 5% commission rate on employee referrals
 - Payment history
 
 #### 7. **Email Queue** (`/secure-admin-gateway/dashboard/email-queue`)
+
 - Pending, sent, failed emails
 - Retry management
 - Error debugging
 - Provider analytics (Resend, Brevo, SendGrid, SMTP)
 
 ### Multi-Admin System
+
 - **Multiple admins supported** (not just one)
 - Each admin has individual Supabase Auth account
 - Shared Portal Key for gateway access
@@ -119,6 +132,7 @@ STRIPE_API_VERSION=2025-11-17.clover
 ## 📝 Letter Generation Features
 
 ### Letter Types (6 Types)
+
 1. **Demand Letter** - Formal demand for payment or action
    - Conditional fields: Amount Demanded ($), Deadline for Response
 
@@ -138,24 +152,29 @@ STRIPE_API_VERSION=2025-11-17.clover
    - Conditional fields: Date of Purchase or Incident
 
 ### Form Fields
+
 **Required:**
+
 - Sender Name, Address
 - Recipient Name, Address
 - Issue Description (min 20 characters)
 - Desired Outcome (min 10 characters)
 
 **Optional (with validation):**
+
 - Phone numbers (10-20 digits, specific format)
 - Email addresses (valid format)
 - Amount Demanded (number, $0-$10,000,000)
 - Dates (YYYY-MM-DD or MM/DD/YYYY format)
 
 **Supporting Documents:**
+
 - Attachment icon (paperclip) displayed
 - Textarea for describing documents
 - Helper text about attachments
 
 ### Letter Generation Flow
+
 ```
 User fills form → API validation → AI generation (GPT-4 Turbo) →
 Status: generating → Status: pending_review → Admin review →
@@ -163,6 +182,7 @@ Status: approved/rejected → Email to user
 ```
 
 ### Stripe Client Utility
+
 - **Location**: `lib/stripe/client.ts`
 - **Features**:
   - Sanitizes API keys (removes whitespace, quotes, newlines)
@@ -175,17 +195,20 @@ Status: approved/rejected → Email to user
 ## 💰 Subscription System
 
 ### Plans
+
 1. **Single Letter** - $299 (1 letter, one-time)
 2. **Monthly Plan** - $299 (4 letters/month, popular)
 3. **Yearly Plan** - $599 (8 letters/year)
 
 ### Allowance Tracking
+
 - PostgreSQL functions: `check_letter_allowance()`, `deduct_letter_allowance()`
 - `total_letters_generated` field prevents free trial abuse
 - Letter credits system with monthly reset
 - Free trial: 1 letter if no previous generations
 
 ### Payment Processing
+
 - Stripe Checkout (test mode)
 - Session creation with metadata
 - Webhook confirmation
@@ -197,6 +220,7 @@ Status: approved/rejected → Email to user
 ## 👥 Employee Referral System
 
 ### Features
+
 - Employee coupon generation (auto-created on signup)
 - Unique coupon codes per employee
 - 5% commission on referrals
@@ -205,6 +229,7 @@ Status: approved/rejected → Email to user
 - Commission approval workflow
 
 ### Commission Tracking
+
 - Status: `pending`, `paid`, `rejected`
 - Calculation: `subscription_amount * 0.05`
 - Admin approval required
@@ -215,12 +240,14 @@ Status: approved/rejected → Email to user
 ## 🔐 Security Features
 
 ### Authentication
+
 - Supabase Auth (JWT tokens)
 - Role-based access control (RBAC)
 - Protected API routes
 - Admin session management (30-minute timeout)
 
 ### Rate Limiting
+
 - Upstash Redis/KV
 - Letter generation: 5 per hour
 - Subscription: 3 per hour
@@ -228,12 +255,14 @@ Status: approved/rejected → Email to user
 - Admin login: 10 per 15 minutes
 
 ### Input Validation
+
 - Comprehensive letter schema validation
 - Forbidden pattern detection (XSS, SQL injection, prompt injection)
 - Email/phone format validation
 - Character limits and minimum length requirements
 
 ### Content Security Policy
+
 - Strict CSP headers
 - Vercel Live domain whitelisted
 - Stripe domains allowed
@@ -244,11 +273,13 @@ Status: approved/rejected → Email to user
 ## 🗄️ Database (Supabase)
 
 ### Connection
-- **URL**: https://nomiiqzxaxyxnxndvkbe.supabase.co
+
+- **URL**: <https://nomiiqzxaxyxnxndvkbe.supabase.co>
 - **Hostname**: db.nomiiqzxaxyxnxndvkbe.supabase.co
 - **Region**: Production
 
 ### Key Tables
+
 - `profiles` - User profiles and roles
 - `letters` - Letter drafts and metadata
 - `subscriptions` - User subscriptions
@@ -262,6 +293,7 @@ Status: approved/rejected → Email to user
 - `suspicious_patterns` - Flagged activities
 
 ### Row Level Security (RLS)
+
 - All tables have RLS policies
 - Admin-only tables: `fraud_detection_config`, `suspicious_patterns`
 - User data isolation
@@ -272,10 +304,12 @@ Status: approved/rejected → Email to user
 ## 📧 Email System
 
 ### Providers
+
 - **Primary**: Resend (re_DfZwJ1tH_JCjrmaV9eYtLs3sdLRjgcNf2)
 - **Fallback**: Console (development)
 
 ### Email Types
+
 - Letter delivery
 - Subscription confirmations
 - Payment receipts
@@ -283,6 +317,7 @@ Status: approved/rejected → Email to user
 - Admin alerts
 
 ### Queue Processing
+
 - Cron job: `/api/cron/process-email-queue`
 - Schedule: Every 10 minutes
 - Retry logic with exponential backoff
@@ -292,11 +327,13 @@ Status: approved/rejected → Email to user
 ## 🤖 AI Integration
 
 ### Provider
+
 - **Gateway**: Vercel AI Gateway
 - **Model**: OpenAI GPT-4 Turbo
 - **API Key**: Configured in environment
 
 ### Features
+
 - Letter generation with retry logic
 - Prompt injection prevention
 - Content sanitization
@@ -307,6 +344,7 @@ Status: approved/rejected → Email to user
 ## 🎨 UI/UX Features
 
 ### Components (shadcn/ui)
+
 - Form inputs with validation
 - Modal dialogs
 - Loading states
@@ -314,6 +352,7 @@ Status: approved/rejected → Email to user
 - Success notifications
 
 ### Design System
+
 - **Colors**: Blue primary theme
 - **Typography**: Professional legal tone
 - **Responsiveness**: Mobile, tablet, desktop
@@ -324,18 +363,21 @@ Status: approved/rejected → Email to user
 ## 🔧 Development Setup
 
 ### Local Environment
+
 - **Package Manager**: pnpm 10.25.0
 - **Framework**: Next.js 16.0.10 (Turbopack)
 - **Runtime**: Node.js
 - **Database**: Supabase (PostgreSQL)
 
 ### Stripe CLI (Local Testing)
+
 - **Version**: 1.19.0
 - **Status**: Running (background process)
-- **Webhook URL**: http://localhost:3000/api/stripe/webhook
+- **Webhook URL**: <http://localhost:3000/api/stripe/webhook>
 - **Webhook Secret**: Configured locally
 
 ### Environment Files
+
 - `.env.local` - Local development (not in git)
 - `.env.example` - Template with placeholders
 - `.env.development` - Development overrides
@@ -360,6 +402,7 @@ Status: approved/rejected → Email to user
 ## 🎯 Key Features Working
 
 ### ✅ Subscriber Features
+
 - User registration/login
 - Letter generation (6 types)
 - Conditional form fields per letter type
@@ -371,6 +414,7 @@ Status: approved/rejected → Email to user
 - Email delivery
 
 ### ✅ Admin Features
+
 - Secure admin gateway (3-factor auth)
 - Review center with approve/reject actions
 - Analytics dashboard
@@ -382,6 +426,7 @@ Status: approved/rejected → Email to user
 - Audit trail access
 
 ### ✅ Employee Features
+
 - Automatic coupon generation on signup
 - Unique referral links
 - Commission tracking
@@ -389,6 +434,7 @@ Status: approved/rejected → Email to user
 - Performance analytics
 
 ### ✅ Payment Processing
+
 - Stripe Checkout integration
 - Webhook handling
 - Subscription activation
@@ -400,16 +446,19 @@ Status: approved/rejected → Email to user
 ## 🐛 Known Issues & Limitations
 
 ### Validation
+
 - Phone number format strict (10-20 digits only)
 - Date format must be exact (YYYY-MM-DD or MM/DD/YYYY)
 - Minimum character limits on descriptions
 
 ### Test Mode
+
 - Stripe is in TEST MODE (using sk_test_ keys)
 - Need to switch to live keys for production payments
 - Test cards only (4242 4242 4242 4242)
 
 ### Admin Access
+
 - Portal Key required for all admin logins
 - Session expires after 30 minutes
 - No "remember me" functionality
@@ -419,16 +468,19 @@ Status: approved/rejected → Email to user
 ## 📝 Important Notes
 
 ### Security
+
 - ⚠️ **Never commit real API keys to git**
 - ⚠️ **All secrets in Vercel environment variables**
 - ⚠️ **Admin Portal Key should be rotated regularly**
 
 ### Database
+
 - ⚠️ **Run migrations in sequence**
 - ⚠️ **Backup before schema changes**
 - ⚠️ **RLS policies enforced on all tables**
 
 ### Stripe
+
 - ⚠️ **Currently in TEST MODE**
 - ⚠️ **Webhook secret must match Stripe Dashboard**
 - ⚠️ **API version: 2025-11-17.clover**
@@ -438,6 +490,7 @@ Status: approved/rejected → Email to user
 ## 🚀 Next Steps (When Ready)
 
 ### Production Checklist
+
 - [ ] Switch Stripe to LIVE mode (sk_live_ keys)
 - [ ] Update webhook endpoint to production URL
 - [ ] Configure live webhook secret
