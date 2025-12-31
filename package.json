@@ -2,7 +2,7 @@
   "name": "talk-to-my-lawyer",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.25.0",
+  "packageManager": "pnpm@10.27.0",
   "scripts": {
     "precommit": "pnpm lint && pnpm audit --audit-level=high",
     "hooks:install": "./scripts/install-git-hooks.sh",
