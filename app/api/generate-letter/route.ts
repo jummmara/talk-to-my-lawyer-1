@@ -1,16 +1,39 @@
+/**
+ * Letter generation endpoint
+ * POST /api/generate-letter
+ *
+ * Handles AI-powered letter generation with:
+ * - User authentication and authorization
+ * - Allowance checking (free trial, paid, super user)
+ * - AI generation with retry logic
+ * - Audit trail logging
+ * - Admin notifications
+ */
 import { createClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
-import { openai } from "@ai-sdk/openai"
-import { generateText } from "ai"
+import { type NextRequest } from "next/server"
 import { letterGenerationRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateLetterGenerationRequest } from '@/lib/validation/letter-schema'
-import { generateTextWithRetry, checkOpenAIHealth } from '@/lib/ai/openai-retry'
+import { generateTextWithRetry } from '@/lib/ai/openai-retry'
+import { getAdminEmails } from '@/lib/admin/letter-actions'
+import { sendTemplateEmail } from '@/lib/email/service'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import {
+  checkGenerationEligibility,
+  deductLetterAllowance,
+  refundLetterAllowance,
+  incrementTotalLetters,
+  shouldSkipDeduction,
+} from '@/lib/services/allowance-service'
+import type { LetterGenerationResponse } from '@/lib/types/letter.types'
 
 export const runtime = "nodejs"
 
+/**
+ * Generate a letter using AI
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting
+    // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, 5, "1 h")
     if (rateLimitResponse) {
       return rateLimitResponse
@@ -18,95 +41,65 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // 1. Auth Check
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    // 2. Auth Check
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
-    // 2. Role Check
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (profile?.role !== "subscriber") {
-      return NextResponse.json({ error: "Only subscribers can generate letters" }, { status: 403 })
-    }
-
-    // 3. Check Free Trial eligibility using total_letters_generated
-    // This fixes the abuse where users could delete letters and regenerate
-    const { data: profileData } = await supabase
+    // 3. Role Check
+    const { data: profile } = await supabase
       .from("profiles")
-      .select("total_letters_generated")
+      .select("role")
       .eq("id", user.id)
       .single()
 
-    const totalGenerated = profileData?.total_letters_generated || 0
-    const { data: allowance } = await supabase.rpc("check_letter_allowance", { u_id: user.id })
-    const isSuperUser = allowance?.is_super || false
-
-    // Free trial = 0 total generated letters AND no active paid allowance (implied)
-    // Actually, if they have allowance, they are not on free trial logic, they use allowance.
-    // If they have NO allowance, and 0 generated, they get free trial.
-    const hasAllowance = allowance?.has_allowance && (allowance?.remaining || 0) > 0
-    
-    const isFreeTrial = totalGenerated === 0 && !hasAllowance && !isSuperUser
-
-    if (!isFreeTrial && !hasAllowance && !isSuperUser) {
-        return NextResponse.json(
-          {
-            error: "No letter credits remaining. Please upgrade your plan.",
-            needsSubscription: true,
-          },
-          { status: 403 },
-        )
+    if (profile?.role !== "subscriber") {
+      return errorResponses.forbidden("Only subscribers can generate letters")
     }
 
-    const body = await request.json()
-    const { letterType, intakeData } = body
+    // 4. Check generation eligibility (free trial, allowance, super user)
+    const eligibility = await checkGenerationEligibility(user.id)
 
-    // Comprehensive input validation and sanitization
-    const validation = validateLetterGenerationRequest(letterType, intakeData)
-    if (!validation.valid) {
-      console.error("[GenerateLetter] Validation failed:", validation.errors)
-      return NextResponse.json(
-        {
-          error: "Invalid input data",
-          details: validation.errors
-        },
-        { status: 400 }
+    if (!eligibility.canGenerate) {
+      return errorResponses.validation(
+        eligibility.reason || "No letter credits remaining",
+        { needsSubscription: true }
       )
     }
 
-    // Use sanitized data
+    // 5. Parse and validate request body
+    const body = await request.json()
+    const { letterType, intakeData } = body
+
+    const validation = validateLetterGenerationRequest(letterType, intakeData)
+    if (!validation.valid) {
+      console.error("[GenerateLetter] Validation failed:", validation.errors)
+      return errorResponses.validation("Invalid input data", validation.errors)
+    }
+
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
+    // 6. Check API configuration
     if (!process.env.OPENAI_API_KEY) {
       console.error("[GenerateLetter] Missing OPENAI_API_KEY")
-      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+      return errorResponses.serverError("Server configuration error")
     }
 
-    // CRITICAL FIX: Deduct allowance BEFORE generation to prevent race condition
-    // Skip deduction for free trial or super user
-    if (!isFreeTrial && !isSuperUser) {
-        const { data: canDeduct, error: deductError } = await supabase.rpc("deduct_letter_allowance", {
-          u_id: user.id,
-        })
+    // 7. Deduct allowance BEFORE generation (skip for free trial/super user)
+    if (!shouldSkipDeduction(eligibility)) {
+      const deductionResult = await deductLetterAllowance(user.id)
 
-        if (deductError || !canDeduct) {
-          return NextResponse.json(
-            {
-              error: "No letter allowances remaining (or race condition prevented overage).",
-              needsSubscription: true,
-            },
-            { status: 403 },
-          )
-        }
+      if (!deductionResult.success || !deductionResult.wasDeducted) {
+        return errorResponses.validation(
+          deductionResult.error || "No letter allowances remaining",
+          { needsSubscription: true }
+        )
+      }
     }
 
-    // 4. Create letter record with 'generating' status
+    // 8. Create letter record with 'generating' status
     const { data: newLetter, error: insertError } = await supabase
       .from("letters")
       .insert({
@@ -123,41 +116,23 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("[GenerateLetter] Database insert error:", insertError)
+
       // Refund if we deducted
-      if (!isFreeTrial && !isSuperUser) {
-         await supabase.rpc("add_letter_allowances", { u_id: user.id, amount: 1 })
+      if (!shouldSkipDeduction(eligibility)) {
+        await refundLetterAllowance(user.id, 1)
       }
-      return NextResponse.json({ error: "Failed to create letter record" }, { status: 500 })
+
+      return errorResponses.serverError("Failed to create letter record")
     }
 
+    // 9. Generate letter using AI with retry logic
     try {
-      // 5. Generate letter using AI SDK with OpenAI (with retry logic)
-      const prompt = buildPrompt(sanitizedLetterType, sanitizedIntakeData)
+      const generatedContent = await generateLetterContent(
+        sanitizedLetterType,
+        sanitizedIntakeData
+      )
 
-      console.log('[GenerateLetter] Starting AI generation with retry logic')
-      const generationStartTime = Date.now()
-
-      const { text: generatedContent, attempts, duration } = await generateTextWithRetry({
-        prompt,
-        system: "You are a professional legal attorney drafting formal legal letters. Always produce professional, legally sound content with proper formatting.",
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-        model: "gpt-4-turbo"
-      })
-
-      const generationTime = Date.now() - generationStartTime
-      console.log(`[GenerateLetter] AI generation completed:`, {
-        attempts,
-        duration,
-        generationTime,
-        contentLength: generatedContent.length
-      })
-
-      if (!generatedContent) {
-        throw new Error("AI returned empty content")
-      }
-
-      // 6. Update letter with generated content and move to pending_review
+      // 10. Update letter with generated content
       const { error: updateError } = await supabase
         .from("letters")
         .update({
@@ -168,85 +143,188 @@ export async function POST(request: NextRequest) {
         .eq("id", newLetter.id)
 
       if (updateError) {
-        throw updateError // Will be caught below
+        throw updateError
       }
 
-      // 7. Increment total_letters_generated (Fix for abuse)
-      await supabase.rpc('increment_total_letters', { p_user_id: user.id })
+      // 11. Increment total letters generated
+      await incrementTotalLetters(user.id)
 
-      // 8. Log audit trail for letter creation
-      await supabase.rpc('log_letter_audit', {
-        p_letter_id: newLetter.id,
-        p_action: 'created',
-        p_old_status: 'generating',
-        p_new_status: 'pending_review',
-        p_notes: 'Letter generated successfully by AI'
-      })
-
-      return NextResponse.json(
-        {
-          success: true,
-          letterId: newLetter.id,
-          status: "pending_review",
-          isFreeTrial,
-          aiDraft: generatedContent,
-        },
-        { status: 200 },
+      // 12. Log audit trail
+      await logLetterAudit(
+        supabase,
+        newLetter.id,
+        'created',
+        'generating',
+        'pending_review',
+        'Letter generated successfully by AI'
       )
-    } catch (generationError: any) {
-      console.error("[GenerateLetter] Generation failed:", generationError)
-      
-      // Update letter status to failed
-      await supabase
-        .from("letters")
-        .update({ 
-          status: "failed",
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", newLetter.id)
-      
-      // REFUND if we deducted
-      if (!isFreeTrial && !isSuperUser) {
-         await supabase.rpc("add_letter_allowances", { u_id: user.id, amount: 1 })
-         // Also log refund? add_letter_allowances already logs checks.
-      }
 
-      // Log audit trail for failure
-      await supabase.rpc('log_letter_audit', {
-        p_letter_id: newLetter.id,
-        p_action: 'generation_failed',
-        p_old_status: 'generating',
-        p_new_status: 'failed',
-        p_notes: `Generation failed: ${generationError.message}`
+      // 13. Notify admins
+      await notifyAdminsAboutNewLetter(newLetter.id, newLetter.title, sanitizedLetterType)
+
+      // 14. Return success response
+      return successResponse<LetterGenerationResponse>({
+        success: true,
+        letterId: newLetter.id,
+        status: "pending_review",
+        isFreeTrial: eligibility.isFreeTrial,
+        aiDraft: generatedContent,
       })
-      
-      return NextResponse.json(
-        { error: generationError.message || "AI generation failed" },
-        { status: 500 }
+
+    } catch (generationError: unknown) {
+      return handleGenerationFailure(
+        supabase,
+        newLetter.id,
+        generationError,
+        eligibility
       )
     }
-  } catch (error: any) {
-    console.error("[GenerateLetter] Letter generation error:", error)
-    return NextResponse.json({ error: error.message || "Failed to generate letter" }, { status: 500 })
+
+  } catch (error: unknown) {
+    return handleApiError(error, 'GenerateLetter')
   }
 }
 
+/**
+ * Generate letter content using AI with retry logic
+ */
+async function generateLetterContent(
+  letterType: string,
+  intakeData: Record<string, unknown>
+): Promise<string> {
+  const prompt = buildPrompt(letterType, intakeData)
+
+  console.log('[GenerateLetter] Starting AI generation with retry logic')
+  const generationStartTime = Date.now()
+
+  const { text: generatedContent, attempts, duration } = await generateTextWithRetry({
+    prompt,
+    system: "You are a professional legal attorney drafting formal legal letters. Always produce professional, legally sound content with proper formatting.",
+    temperature: 0.7,
+    maxOutputTokens: 2048,
+    model: "gpt-4-turbo"
+  })
+
+  const generationTime = Date.now() - generationStartTime
+  console.log(`[GenerateLetter] AI generation completed:`, {
+    attempts,
+    duration,
+    generationTime,
+    contentLength: generatedContent.length
+  })
+
+  if (!generatedContent) {
+    throw new Error("AI returned empty content")
+  }
+
+  return generatedContent
+}
+
+/**
+ * Handle letter generation failure with proper cleanup
+ */
+async function handleGenerationFailure(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  letterId: string,
+  error: unknown,
+  eligibility: Awaited<ReturnType<typeof checkGenerationEligibility>>
+) {
+  console.error("[GenerateLetter] Generation failed:", error)
+
+  // Update letter status to failed
+  await supabase
+    .from("letters")
+    .update({
+      status: "failed",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", letterId)
+
+  // Refund if we deducted
+  if (!shouldSkipDeduction(eligibility)) {
+    await refundLetterAllowance(letterId, 1)
+  }
+
+  // Log audit trail
+  const errorMessage = error instanceof Error ? error.message : "Unknown error"
+  await logLetterAudit(
+    supabase,
+    letterId,
+    'generation_failed',
+    'generating',
+    'failed',
+    `Generation failed: ${errorMessage}`
+  )
+
+  return errorResponses.serverError(errorMessage || "AI generation failed")
+}
+
+/**
+ * Log letter audit trail
+ */
+async function logLetterAudit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  letterId: string,
+  action: string,
+  oldStatus: string,
+  newStatus: string,
+  notes: string
+) {
+  await supabase.rpc('log_letter_audit', {
+    p_letter_id: letterId,
+    p_action: action,
+    p_old_status: oldStatus,
+    p_new_status: newStatus,
+    p_notes: notes
+  })
+}
+
+/**
+ * Notify admins about new letter pending review
+ */
+async function notifyAdminsAboutNewLetter(letterId: string, title: string, letterType: string) {
+  const adminEmails = await getAdminEmails()
+  if (adminEmails.length === 0) {
+    return
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+  // Send asynchronously - don't wait
+  sendTemplateEmail('admin-alert', adminEmails, {
+    alertMessage: `New letter "${title}" requires review. Letter type: ${letterType}`,
+    actionUrl: `${siteUrl}/secure-admin-gateway/review/${letterId}`,
+    pendingReviews: 1,
+  }).catch(error => {
+    console.error('[GenerateLetter] Failed to send admin notification:', error)
+  })
+}
+
+/**
+ * Build AI prompt from letter type and intake data
+ */
 function buildPrompt(letterType: string, intakeData: Record<string, unknown>) {
   const fields = (key: string) => {
     const value = intakeData[key]
     if (value === undefined || value === null || value === '') return ''
-    const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).replace(/_/g, ' ')
+    const fieldName = key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .replace(/_/g, ' ')
     return `${fieldName}: ${String(value)}`
   }
 
-  const amountField = intakeData["amountDemanded"] ?
-    `Amount Demanded: $${Number(intakeData["amountDemanded"]).toLocaleString()}` : ""
+  const amountField = intakeData["amountDemanded"]
+    ? `Amount Demanded: $${Number(intakeData["amountDemanded"]).toLocaleString()}`
+    : ""
 
-  const deadlineField = intakeData["deadlineDate"] ?
-    `Deadline: ${intakeData["deadlineDate"]}` : ""
+  const deadlineField = intakeData["deadlineDate"]
+    ? `Deadline: ${intakeData["deadlineDate"]}`
+    : ""
 
-  const incidentDateField = intakeData["incidentDate"] ?
-    `Incident Date: ${intakeData["incidentDate"]}` : ""
+  const incidentDateField = intakeData["incidentDate"]
+    ? `Incident Date: ${intakeData["incidentDate"]}`
+    : ""
 
   const basePrompt = [
     `Draft a professional ${letterType} letter with the following details:`,
@@ -284,6 +362,5 @@ function buildPrompt(letterType: string, intakeData: Record<string, unknown>) {
     "Important: Only return the letter content itself, no explanations or commentary."
   ]
 
-  // Filter out empty lines and join
   return basePrompt.filter(Boolean).join("\n")
 }

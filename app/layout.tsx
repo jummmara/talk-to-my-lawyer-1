@@ -42,7 +42,7 @@ export default function RootLayout({
         <link rel="icon" href={LOGO_URL} type="image/jpeg" />
         <link rel="apple-touch-icon" href={LOGO_URL} />
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         {children}
       </body>
     </html>

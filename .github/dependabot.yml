@@ -1,70 +1,43 @@
-# Dependabot configuration for automated dependency updates
-# This file configures Dependabot to automatically check for and create PRs for dependency updates
-# Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
-
 version: 2
 
 updates:
-  # Monitor npm/pnpm dependencies
+  # Monitor Node.js dependencies (pnpm is handled under the "npm" ecosystem via pnpm-lock.yaml)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      # Check for updates every week on Monday
       interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    
-    # Open pull requests against the main branch
+
     target-branch: "main"
-    
-    # Allow up to 10 open pull requests for npm dependencies
     open-pull-requests-limit: 10
-    
-    # Add labels to Dependabot PRs
+
     labels:
       - "dependencies"
       - "automated"
-    
-    # Add reviewers (optional - uncomment and update with actual GitHub usernames)
-    # reviewers:
-    #   - "moizjmj-pk"
-    
-    # Add assignees (optional - uncomment and update with actual GitHub usernames)
-    # assignees:
-    #   - "moizjmj-pk"
-    
-    # Prefix commit messages
+
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
       include: "scope"
-    
-    # Versioning strategy
-    # - increase: Always increase the version requirement to allow both older and newer versions
-    # - increase-if-necessary: Increase the version requirement only when required
-    # - lockfile-only: Only update the lockfile, ignore package.json
-    # - widen: Widen version requirements to include both older and newer versions
+
     versioning-strategy: increase-if-necessary
-    
-    # Group dependency updates to reduce PR noise
+
     groups:
-      # Group all Radix UI components together
       radix-ui:
         patterns:
           - "@radix-ui/*"
         update-types:
           - "minor"
           - "patch"
-      
-      # Group all dev dependencies together for minor and patch updates
+
       dev-dependencies:
         dependency-type: "development"
         update-types:
           - "minor"
           - "patch"
-      
-      # Group React-related packages
+
       react:
         patterns:
           - "react"
@@ -73,8 +46,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
-      # Group Next.js related packages
+
       nextjs:
         patterns:
           - "next"
@@ -82,8 +54,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
-      # Group TypeScript and types
+
       typescript:
         patterns:
           - "typescript"
@@ -91,8 +62,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
-      # Group Stripe packages
+
       stripe:
         patterns:
           - "stripe"
@@ -100,8 +70,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
-      # Group Supabase packages
+
       supabase:
         patterns:
           - "@supabase/*"
@@ -109,8 +78,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
-      # Group TailwindCSS packages
+
       tailwind:
         patterns:
           - "tailwindcss"
@@ -119,10 +87,8 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    
-    # Ignore specific dependencies or versions
+
     ignore:
-      # Ignore major version updates for Next.js (manual review recommended)
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
 
@@ -130,30 +96,23 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for GitHub Actions updates weekly
       interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    
-    # Open pull requests against main branch
+
     target-branch: "main"
-    
-    # Limit to 5 open PRs for Actions updates
     open-pull-requests-limit: 5
-    
-    # Add labels to Actions update PRs
+
     labels:
       - "github-actions"
       - "dependencies"
       - "automated"
-    
-    # Commit message configuration
+
     commit-message:
       prefix: "ci"
       include: "scope"
-    
-    # Group all GitHub Actions updates together
+
     groups:
       github-actions:
         patterns:
@@ -161,3 +120,24 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  # Monitor Dev Containers for updates (aligned with Monday 09:00 UTC)
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+
+    target-branch: "main"
+    open-pull-requests-limit: 5
+
+    labels:
+      - "devcontainers"
+      - "dependencies"
+      - "automated"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"

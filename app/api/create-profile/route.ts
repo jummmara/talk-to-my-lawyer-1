@@ -91,20 +91,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If employee role, create coupon automatically
+    // Note: Employee coupon is created automatically by the database trigger
+    // (trigger_create_employee_coupon) when profile with role='employee' is inserted.
+    // We verify it was created successfully here.
     if (role === 'employee') {
-      const { error: couponError } = await serviceClient
+      // Wait a moment for trigger to complete, then verify coupon exists
+      const { data: couponData, error: couponCheckError } = await serviceClient
         .from('employee_coupons')
-        .insert({
-          employee_id: user.id,
-          code: `EMP${user.id.slice(0, 8).toUpperCase()}`,
-          discount_percent: 20,
-          is_active: true
-        })
+        .select('code')
+        .eq('employee_id', user.id)
+        .single()
 
-      if (couponError) {
-        console.error('[CreateProfile] Employee coupon creation error:', couponError)
-        // Don't fail the request, but log the error
+      if (couponCheckError || !couponData) {
+        // Trigger may have failed - create coupon manually as fallback
+        console.warn('[CreateProfile] Coupon not found after trigger, creating manually...')
+        const couponCode = `EMP-${user.id.slice(0, 6).toUpperCase()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`
+        const { error: couponInsertError } = await serviceClient
+          .from('employee_coupons')
+          .insert({
+            employee_id: user.id,
+            code: couponCode,
+            discount_percent: 20,
+            is_active: true
+          })
+        
+        if (couponInsertError) {
+          console.error('[CreateProfile] Fallback coupon creation failed:', couponInsertError)
+        } else {
+          console.log('[CreateProfile] Fallback coupon created:', couponCode)
+        }
+      } else {
+        console.log('[CreateProfile] Employee coupon verified:', couponData.code)
       }
     }
 

@@ -8,6 +8,7 @@ import { requireAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
 import { validateAdminRequest, generateAdminCSRF } from '@/lib/security/csrf'
 import { sanitizeString } from '@/lib/security/input-sanitizer'
 import { sendTemplateEmail } from '@/lib/email/service'
+import type { EmailTemplate } from '@/lib/email/types'
 
 /**
  * Common authentication and validation for admin routes
@@ -60,7 +61,7 @@ export async function handleCSRFTokenRequest(): Promise<NextResponse> {
 export async function updateLetterStatus(params: {
   letterId: string
   status: string
-  additionalFields?: Record<string, any>
+  additionalFields?: Record<string, unknown>
   auditAction: string
   auditNotes: string
 }) {
@@ -104,13 +105,27 @@ export async function updateLetterStatus(params: {
 }
 
 /**
+ * Get all admin email addresses from the database
+ */
+export async function getAdminEmails(): Promise<string[]> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('role', 'admin')
+
+  return data?.map((p: { email: string | null }) => p.email).filter(Boolean) as string[] || []
+}
+
+/**
  * Send notification email to letter owner
  */
 export async function notifyLetterOwner(params: {
   userId: string
   letterId: string
-  templateName: string
-  templateData: Record<string, any>
+  templateName: EmailTemplate
+  templateData: Record<string, unknown>
 }) {
   const supabase = await createClient()
   const { userId, letterId, templateName, templateData } = params

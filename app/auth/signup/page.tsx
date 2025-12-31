@@ -114,29 +114,11 @@ export default function SignUpPage() {
           console.warn('Continuing with signup despite profile error')
         }
 
-        // If employee, create a coupon code
+        // Note: Employee coupon is created automatically by the database trigger
+        // when the profile is created with role='employee' via /api/create-profile
+        // No need to create it here - it would cause duplicate/conflict issues
         if (role === 'employee') {
-          try {
-            const couponCode = `TTML${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-            const { error: couponError } = await supabase
-              .from('employee_coupons')
-              .insert({
-                employee_id: authData.user.id,
-                code: couponCode,
-                discount_percent: 20,
-                is_active: true
-              })
-
-            if (couponError) {
-              console.error('Coupon creation error:', couponError)
-              console.warn('Failed to create employee coupon, but continuing signup')
-            } else {
-              console.log('Employee coupon created successfully:', couponCode)
-            }
-          } catch (err) {
-            console.error('Unexpected error during coupon creation:', err)
-            console.warn('Continuing with signup despite coupon error')
-          }
+          console.log('Employee signup complete - coupon will be auto-generated via database trigger')
         }
       }
 

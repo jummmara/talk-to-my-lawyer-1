@@ -40,10 +40,11 @@ import {
   History
 } from "lucide-react"
 import { toast } from "sonner"
+import type { Letter, LetterAuditTrail } from "@/lib/types/letter.types"
 
 interface LetterReviewInterfaceProps {
-  letter: any
-  auditTrail: any[]
+  letter: Letter
+  auditTrail: LetterAuditTrail[]
 }
 
 export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterfaceProps) {
@@ -94,8 +95,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
       toast.success("Letter content saved successfully")
       setIsEditing(false)
       window.location.reload()
-    } catch (error: any) {
-      toast.error("Failed to save edits: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to save edits: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsLoading(false)
     }
@@ -129,8 +130,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
 
       toast.success("Letter approved successfully")
       window.location.reload()
-    } catch (error: any) {
-      toast.error("Failed to approve letter: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to approve letter: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsLoading(false)
     }
@@ -169,8 +170,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
 
       toast.success("Letter rejected")
       window.location.reload()
-    } catch (error: any) {
-      toast.error("Failed to reject letter: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to reject letter: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsLoading(false)
     }
@@ -201,8 +202,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
 
       toast.success("Letter marked as completed")
       window.location.reload()
-    } catch (error: any) {
-      toast.error("Failed to complete letter: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to complete letter: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsLoading(false)
     }
@@ -235,8 +236,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
       })
 
       toast.success("Letter improved with AI suggestions")
-    } catch (error: any) {
-      toast.error("Failed to improve letter: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to improve letter: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsLoading(false)
     }
@@ -261,8 +262,8 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
       document.body.removeChild(a)
 
       toast.success("PDF downloaded successfully")
-    } catch (error: any) {
-      toast.error("Failed to download PDF: " + error.message)
+    } catch (error: unknown) {
+      toast.error("Failed to download PDF: " + (error instanceof Error ? error.message : "Unknown error"))
     }
   }
 

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { SubscriptionModal } from "@/components/subscription-modal"
 import { GenerateButton } from "@/components/generate-button"
 import { GenerationTrackerModal, type LetterStatus } from "@/components/generation-tracker-modal"
+import { FileUpload, type UploadedFile } from "@/components/ui/file-upload"
 import { createClient } from "@/lib/supabase/client"
 
 const LETTER_TYPES = [
@@ -98,8 +99,11 @@ export default function NewLetterPage() {
     issueDescription: "",
     desiredOutcome: "",
     amountDemanded: "",
+    deadlineDate: "",
+    incidentDate: "",
     supportingDocuments: "",
   })
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
 
   useEffect(() => {
     checkSubscription()
@@ -171,6 +175,16 @@ export default function NewLetterPage() {
     setTrackerStatus("generating")
 
     try {
+      // Prepare uploaded files data for the API
+      const attachedFiles = uploadedFiles
+        .filter(f => f.status === "success")
+        .map(f => ({
+          name: f.name,
+          type: f.type,
+          size: f.size,
+          url: f.url || undefined,
+        }))
+
       const intakeData = {
         senderName: formData.senderName,
         senderAddress: formData.senderAddress,
@@ -179,7 +193,10 @@ export default function NewLetterPage() {
         issueDescription: formData.issueDescription,
         desiredOutcome: formData.desiredOutcome,
         amountDemanded: formData.amountDemanded ? Number(formData.amountDemanded) : undefined,
+        deadlineDate: formData.deadlineDate || undefined,
+        incidentDate: formData.incidentDate || undefined,
         additionalDetails: formData.supportingDocuments || undefined,
+        attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
       }
 
       const requestBody = {
@@ -200,7 +217,11 @@ export default function NewLetterPage() {
           router.push("/dashboard/subscription")
           return
         }
-        throw new Error(errorData.error || "Failed to generate letter")
+        // Show detailed validation errors if available
+        const errorMessage = errorData.details
+          ? `${errorData.error}: ${errorData.details.join(', ')}`
+          : errorData.error || "Failed to generate letter"
+        throw new Error(errorMessage)
       }
 
       const { letterId: newLetterId, aiDraft: draft, isFreeTrial: freeTrialFlag, status } = await response.json()
@@ -335,15 +356,95 @@ export default function NewLetterPage() {
               </div>
 
               {selectedType === "demand_letter" && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="amountDemanded">Amount Demanded ($)</Label>
+                    <Input
+                      id="amountDemanded"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.amountDemanded}
+                      onChange={(e) => setFormData({ ...formData, amountDemanded: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deadlineDate">Deadline for Response</Label>
+                    <Input
+                      id="deadlineDate"
+                      type="date"
+                      value={formData.deadlineDate}
+                      onChange={(e) => setFormData({ ...formData, deadlineDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedType === "cease_desist" && (
                 <div>
-                  <Label htmlFor="amountDemanded">Amount Demanded ($)</Label>
+                  <Label htmlFor="deadlineDate">Deadline to Cease Activity</Label>
                   <Input
-                    id="amountDemanded"
-                    type="number"
-                    step="0.01"
-                    value={formData.amountDemanded}
-                    onChange={(e) => setFormData({ ...formData, amountDemanded: e.target.value })}
+                    id="deadlineDate"
+                    type="date"
+                    value={formData.deadlineDate}
+                    onChange={(e) => setFormData({ ...formData, deadlineDate: e.target.value })}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Specify by when the activity must stop
+                  </p>
+                </div>
+              )}
+
+              {(selectedType === "contract_breach" || selectedType === "employment_dispute") && (
+                <div>
+                  <Label htmlFor="incidentDate">Date of Incident/Breach</Label>
+                  <Input
+                    id="incidentDate"
+                    type="date"
+                    value={formData.incidentDate}
+                    onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When did the breach or incident occur?
+                  </p>
+                </div>
+              )}
+
+              {selectedType === "eviction_notice" && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="deadlineDate">Notice to Vacate By</Label>
+                    <Input
+                      id="deadlineDate"
+                      type="date"
+                      value={formData.deadlineDate}
+                      onChange={(e) => setFormData({ ...formData, deadlineDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="incidentDate">Lease Start Date</Label>
+                    <Input
+                      id="incidentDate"
+                      type="date"
+                      value={formData.incidentDate}
+                      onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedType === "consumer_complaint" && (
+                <div>
+                  <Label htmlFor="incidentDate">Date of Purchase or Incident</Label>
+                  <Input
+                    id="incidentDate"
+                    type="date"
+                    value={formData.incidentDate}
+                    onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When did you purchase the product or when did the issue occur?
+                  </p>
                 </div>
               )}
 
@@ -360,14 +461,37 @@ export default function NewLetterPage() {
               </div>
 
               <div>
-                <Label htmlFor="supportingDocuments">Supporting Documents (Optional)</Label>
-                <Textarea
-                  id="supportingDocuments"
-                  rows={2}
-                  placeholder="List any contracts, invoices, emails, or other documents that support your case"
-                  value={formData.supportingDocuments}
-                  onChange={(e) => setFormData({ ...formData, supportingDocuments: e.target.value })}
+                <Label className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  Supporting Documents (Optional)
+                </Label>
+                <FileUpload
+                  files={uploadedFiles}
+                  onFilesChange={setUploadedFiles}
+                  maxFiles={5}
+                  maxSizeBytes={10 * 1024 * 1024}
+                  disabled={loading}
                 />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Upload contracts, invoices, emails, photos, or any documents that support your case. The AI will review these to create a more accurate draft.
+                </p>
+                
+                {/* Optional text field for additional document descriptions */}
+                <div className="mt-3">
+                  <Label htmlFor="supportingDocuments" className="text-xs text-muted-foreground">
+                    Additional notes about your documents (optional)
+                  </Label>
+                  <Textarea
+                    id="supportingDocuments"
+                    rows={2}
+                    placeholder="Describe any additional context about your documents..."
+                    value={formData.supportingDocuments}
+                    onChange={(e) => setFormData({ ...formData, supportingDocuments: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
               </div>
             </div>
 
