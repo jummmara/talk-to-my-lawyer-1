@@ -310,7 +310,7 @@ export default function HomePage() {
               }}
             >
               <motion.h1
-                className="text-5xl md:text-7xl font-bold mb-6"
+                className="text-5xl md:text-7xl font-bold mb-4"
                 style={{
                   background: 'linear-gradient(135deg, #0a2540 0%, #199df4 35%, #00d4ff 65%, #0a2540 100%)',
                   backgroundClip: 'text',
@@ -330,29 +330,56 @@ export default function HomePage() {
                   },
                 }}
               >
-                Need a Lawyer&apos;s
-                <motion.span
-                  className="block"
-                  variants={{
-                    hidden: { opacity: 0, y: 30 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: {
-                        duration: 0.8,
-                        delay: 0.2,
-                      }
-                    },
-                  }}
-                >
-                  <span className="text-gray-900">Voice Without the</span>
-                  <br />
-                  <span className="text-gray-900">Legal Bill?</span>
-                </motion.span>
+                Get professional lawyer-drafted letters for
               </motion.h1>
 
+              {/* Highlighted Service Types */}
+              <motion.div
+                className="flex flex-wrap justify-center gap-3 mb-8"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.1,
+                      delayChildren: 0.3,
+                    },
+                  },
+                }}
+              >
+                {[
+                  'Breach of Contract',
+                  'Demand for Payment',
+                  'Cease and Desist',
+                  'Pre-Litigation Settlement',
+                  'Debt Collection',
+                  'And more',
+                ].map((service, index) => (
+                  <motion.span
+                    key={service}
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm"
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.8 },
+                      visible: {
+                        opacity: 1,
+                        scale: 1,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 200,
+                          damping: 15,
+                        }
+                      },
+                    }}
+                  >
+                    {service}
+                  </motion.span>
+                ))}
+              </motion.div>
+
               <motion.p
-                className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+                className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium"
                 variants={{
                   hidden: { opacity: 0, y: 20 },
                   visible: {
@@ -360,14 +387,12 @@ export default function HomePage() {
                     y: 0,
                     transition: {
                       duration: 0.6,
-                      delay: 0.4,
+                      delay: 0.5,
                     }
                   },
                 }}
               >
-                Get professional, lawyer-drafted letters for tenant disputes, debt collection, HR
-                issues, and more. Resolve conflicts quickly and affordably with the power of legal
-                communication.
+                Resolve conflicts quickly and affordably — only <span className="text-[#199df4] font-bold">$50 per letter</span>.
               </motion.p>
             </motion.div>
 
@@ -433,26 +458,27 @@ export default function HomePage() {
                   },
                 }}
               >
-                <Button
-                  variant="outline"
-                  onClick={() => scrollToSection('faqs')}
-                  className="px-12 py-5 text-lg font-semibold rounded-xl border-2 border-[#199df4]/30 text-[#199df4] bg-white/80 backdrop-blur-sm hover:bg-sky-50 hover:border-[#199df4]/50 hover:shadow-xl transition-all duration-300 group ripple magnetic-btn cta-aurora"
-                >
-                  <motion.div
-                    className="flex items-center"
-                    whileHover={{ x: 5 }}
-                    transition={{ type: "spring", stiffness: 400 }}
+                <Link href="/faq">
+                  <Button
+                    variant="outline"
+                    className="px-12 py-5 text-lg font-semibold rounded-xl border-2 border-[#199df4]/30 text-[#199df4] bg-white/80 backdrop-blur-sm hover:bg-sky-50 hover:border-[#199df4]/50 hover:shadow-xl transition-all duration-300 group ripple magnetic-btn cta-aurora"
                   >
                     <motion.div
-                      whileHover={{ rotate: 15 }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                      className="flex items-center"
+                      whileHover={{ x: 5 }}
+                      transition={{ type: "spring", stiffness: 400 }}
                     >
-                      <FileText className="h-5 w-5 mr-3" />
+                      <motion.div
+                        whileHover={{ rotate: 15 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        <FileText className="h-5 w-5 mr-3" />
+                      </motion.div>
+                      View FAQs
+                      <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </motion.div>
-                    View FAQs
-                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </motion.div>
-                </Button>
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
 
@@ -473,9 +499,9 @@ export default function HomePage() {
               }}
             >
               {[
-                { icon: CheckCircle, text: "No Legal Fees", color: "text-green-500" },
-                { icon: CheckCircle, text: "24-48 Hour Delivery", color: "text-green-500" },
-                { icon: CheckCircle, text: "Lawyer Reviewed", color: "text-green-500" },
+                { icon: CheckCircle, text: "PDF Download", color: "text-green-500" },
+                { icon: CheckCircle, text: "Up to 48 hours turnaround", color: "text-green-500" },
+                { icon: CheckCircle, text: "Attorney approved", color: "text-green-500" },
               ].map((item, index) => (
                 <motion.div
                   key={item.text}
@@ -543,10 +569,10 @@ export default function HomePage() {
               </div>
               <div className="scroll-reveal stagger-4 counter-animate">
                 <div className="text-4xl font-bold mb-2 text-gradient-animated animate-pulse-scale">
-                  24 Hours
+                  Up to 48 Hours
                 </div>
                 <div className="text-blue-200 transition-colors duration-200 hover:text-white">
-                  Average Delivery
+                  Turnaround Time
                 </div>
               </div>
             </div>
@@ -554,14 +580,13 @@ export default function HomePage() {
         </section>
 
         {/* Letter Types Section */}
-        <section id="faqs" className="py-20 px-4 sm:px-6 lg:px-8">
+        <section id="letter-types" className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <Badge className="bg-sky-100 text-[#199df4] mb-4">Most Popular</Badge>
               <h2 className="text-4xl font-bold mb-4 shiny-text">Professional Legal Letters</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Choose from our comprehensive library of lawyer-drafted letter templates. Each
-                letter is customized for your specific situation and reviewed by licensed attorneys.
+                Custom made letters for your specific situation, sent by lawyer's email.
               </p>
             </div>
 
@@ -582,52 +607,46 @@ export default function HomePage() {
             >
               {[
                 {
-                  icon: Home,
-                  title: 'Tenant Disputes',
-                  desc: 'Security deposits, lease violations, habitability issues, and more',
-                  price: '$299',
-                  color: 'blue',
-                  gradient: 'from-[#199df4] to-[#0d8ae0]',
-                },
-                {
-                  icon: Briefcase,
-                  title: 'HR & Employment',
-                  desc: 'Workplace harassment, wrongful termination, wage disputes',
-                  price: '$299',
-                  color: 'green',
-                  gradient: 'from-[#00c9a7] to-[#00a383]',
+                  icon: Shield,
+                  title: 'Cease and Desist',
+                  desc: 'Stop harassment, defamation, copyright infringement, and more',
+                  color: 'orange',
+                  gradient: 'from-[#ffa726] to-[#ff9800]',
                 },
                 {
                   icon: AlertCircle,
-                  title: 'Debt Collection',
-                  desc: 'Collect money owed to you from clients, customers, or businesses',
-                  price: '$299',
+                  title: 'Breach of Contract',
+                  desc: 'Contract violations, non-payment, failure to deliver goods or services',
                   color: 'red',
                   gradient: 'from-[#ff6b6b] to-[#ee5a52]',
                 },
                 {
+                  icon: FileText,
+                  title: 'Demand for Payment',
+                  desc: 'Collect money owed to you from clients, customers, or businesses',
+                  color: 'blue',
+                  gradient: 'from-[#199df4] to-[#0d8ae0]',
+                },
+                {
+                  icon: Scale,
+                  title: 'Pre-Litigation Settlement',
+                  desc: 'Settlement demands before filing a lawsuit, negotiate disputes',
+                  color: 'green',
+                  gradient: 'from-[#00c9a7] to-[#00a383]',
+                },
+                {
                   icon: Users,
-                  title: 'Personal Disputes',
-                  desc: 'Neighbor disputes, contract breaches, personal injury claims',
-                  price: '$299',
+                  title: 'Debt Collection',
+                  desc: 'Professional debt collection letters for outstanding payments',
                   color: 'blue',
                   gradient: 'from-[#4facfe] to-[#199df4]',
                 },
                 {
-                  icon: Building,
-                  title: 'Property Issues',
-                  desc: 'Property damage, boundary disputes, easement issues',
-                  price: '$299',
+                  icon: Briefcase,
+                  title: 'And More',
+                  desc: 'Contact us for any other legal letter needs you may have',
                   color: 'blue',
                   gradient: 'from-[#0d8ae0] to-[#0066cc]',
-                },
-                {
-                  icon: Shield,
-                  title: 'Cease & Desist',
-                  desc: 'Stop harassment, defamation, copyright infringement, and more',
-                  price: '$299',
-                  color: 'orange',
-                  gradient: 'from-[#ffa726] to-[#ff9800]',
                 },
               ].map((type, index) => (
                 <motion.div
@@ -705,15 +724,7 @@ export default function HomePage() {
                       <CardTitle className="text-xl font-semibold mb-2 text-gray-900 group-hover:text-[#199df4] transition-colors duration-300">
                         {type.title}
                       </CardTitle>
-                      <CardDescription className="text-gray-600 mb-4 leading-relaxed">{type.desc}</CardDescription>
-                      <motion.div
-                        className="text-2xl font-bold text-[#199df4]"
-                        whileHover={{
-                          scale: 1.05
-                        }}
-                      >
-                        Starting at {type.price}
-                      </motion.div>
+                      <CardDescription className="text-gray-600 leading-relaxed">{type.desc}</CardDescription>
                     </CardHeader>
                     <CardContent className="relative z-10">
                       <Link href="/auth/signup">
@@ -751,12 +762,12 @@ export default function HomePage() {
                 {
                   icon: Zap,
                   title: 'Lightning Fast',
-                  desc: 'Generate professional legal letters in minutes, not hours',
+                  desc: 'Professional legal letters in minutes, not hours',
                 },
                 {
                   icon: Users,
-                  title: 'Attorney Reviewed',
-                  desc: 'Every letter is reviewed by qualified legal professionals',
+                  title: 'Attorney Approved',
+                  desc: 'Every letter is approved by qualified legal professionals',
                 },
                 {
                   icon: Shield,
@@ -800,10 +811,10 @@ export default function HomePage() {
               <div>
                 <h3 className="font-semibold mb-4 glow-text">Services</h3>
                 <ul className="space-y-2 text-blue-200">
-                  <li>Tenant Disputes</li>
-                  <li>HR Issues</li>
+                  <li>Cease and Desist</li>
+                  <li>Breach of Contract</li>
+                  <li>Demand for Payment</li>
                   <li>Debt Collection</li>
-                  <li>Cease & Desist</li>
                 </ul>
               </div>
 

@@ -8,6 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Multi-Admin System**: The platform supports multiple admin users who share the same admin dashboard for reviewing and approving letters.
 
+## Non-Negotiable Rules
+
+1. **Only subscribers can generate letters** - Employees and admins must never access letter generation APIs
+2. **Admin review is mandatory** - No "raw AI" letters reach subscribers; every letter requires approval
+3. **Employees never see letter content** - They only see coupon stats and commissions
+4. **Respect RLS** - Never disable Row Level Security; all DB access respects role scoping
+5. **Do not leak secrets** - Never log env var values; refer to names like `OPENAI_API_KEY` only
+6. **Use pnpm exclusively** - Never add npm/yarn lockfiles (`packageManager=pnpm@10.27.0`)
+
 ## Tech Stack
 
 - **Frontend**: Next.js 16 with React 19 and TypeScript
@@ -19,33 +28,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Email**: Resend (primary), with Brevo, SendGrid, and SMTP providers available
 - **Rate Limiting**: Upstash Redis
 - **Package Manager**: pnpm
+- **MCP Integrations**: Stripe, Vercel, and Supabase are connected via MCP (Model Context Protocol)
 
 ## Common Development Commands
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Run development server
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start
-
-# Lint code
-pnpm lint
-
-# Database migrations
-pnpm db:migrate
-
-# Validate environment variables
-pnpm validate-env
-
-# Health check
-pnpm health-check
+pnpm install          # Install dependencies
+pnpm dev              # Development server
+pnpm lint             # Required before delivery
+CI=1 pnpm build       # Production build (stricter checks)
+pnpm validate-env     # Check environment variables
+pnpm health-check     # Service health check
+pnpm db:migrate       # Run database migrations
 ```
 
 ## Architecture Overview
@@ -267,7 +261,7 @@ Once authenticated, admins have access to:
 - **View All Users**: Complete user directory
 - **User Details**: Profile, subscription status, letters generated, usage limits
 - **Drill-Down**: Individual user activity and letter history
-- **Role Distribution**: Subscribers, employees, admins, super users
+- **Role Distribution**: Subscribers, employees, admins
 
 #### 4. Employees Management (`/secure-admin-gateway/dashboard/coupons`)
 - **Employee Directory**: All registered employees

@@ -393,7 +393,7 @@ export async function checkOpenAIHealth(): Promise<{
       prompt: "Respond with exactly: OK",
       system: "You are a health check service.",
       temperature: 0,
-      maxOutputTokens: 10,
+      maxOutputTokens: 16,
       model: "gpt-4-turbo"
     })
 

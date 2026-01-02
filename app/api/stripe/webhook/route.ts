@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
         const discount = parseFloat(metadata.discount || '0')
         const couponCode = metadata.coupon_code || null
         const employeeId = metadata.employee_id || null
-        const isSuperUserCoupon = metadata.is_super_user_coupon === 'true'
+        
+        // Check if this is a super user coupon (typically TALK3 or similar promo codes with $0 payment)
+        const isSuperUserCoupon = couponCode === 'TALK3' || finalPrice === 0
 
         // Update subscription status to active and set credits
         const { data: subscription, error: updateError } = await supabase
@@ -88,14 +90,6 @@ export async function POST(request: NextRequest) {
 
         if (updateError) {
           console.error('[StripeWebhook] Failed to update subscription:', updateError)
-        }
-
-        // Mark user as super user if applicable
-        if (isSuperUserCoupon) {
-          await supabase
-            .from('profiles')
-            .update({ is_super_user: true })
-            .eq('id', metadata.user_id)
         }
 
         // Record coupon usage

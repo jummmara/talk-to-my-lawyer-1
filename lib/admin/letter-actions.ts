@@ -8,6 +8,7 @@ import { requireAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
 import { validateAdminRequest, generateAdminCSRF } from '@/lib/security/csrf'
 import { sanitizeString } from '@/lib/security/input-sanitizer'
 import { sendTemplateEmail } from '@/lib/email/service'
+import type { EmailTemplate } from '@/lib/email/types'
 
 /**
  * Common authentication and validation for admin routes
@@ -59,8 +60,8 @@ export async function handleCSRFTokenRequest(): Promise<NextResponse> {
  */
 export async function updateLetterStatus(params: {
   letterId: string
-  status: string
-  additionalFields?: Record<string, any>
+  status?: string
+  additionalFields?: Record<string, unknown>
   auditAction: string
   auditNotes: string
 }) {
@@ -75,13 +76,16 @@ export async function updateLetterStatus(params: {
     .eq('id', letterId)
     .single()
 
-  // Update letter with new status
-  const updateData = {
-    status,
+  // Update letter with new status (only include status if provided)
+  const updateData: Record<string, unknown> = {
     reviewed_by: adminSession?.userId,
     reviewed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...additionalFields
+  }
+
+  if (status !== undefined) {
+    updateData.status = status
   }
 
   const { error: updateError } = await supabase
@@ -91,16 +95,30 @@ export async function updateLetterStatus(params: {
 
   if (updateError) throw updateError
 
-  // Log audit trail
+  // Log audit trail (use provided status or current status if unchanged)
   await supabase.rpc('log_letter_audit', {
     p_letter_id: letterId,
     p_action: auditAction,
     p_old_status: letter?.status || 'unknown',
-    p_new_status: status,
+    p_new_status: status ?? letter?.status ?? 'unknown',
     p_notes: auditNotes
   })
 
   return { letter, updateData }
+}
+
+/**
+ * Get all admin email addresses from the database
+ */
+export async function getAdminEmails(): Promise<string[]> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('role', 'admin')
+
+  return data?.map((p: { email: string | null }) => p.email).filter(Boolean) as string[] || []
 }
 
 /**
@@ -109,8 +127,8 @@ export async function updateLetterStatus(params: {
 export async function notifyLetterOwner(params: {
   userId: string
   letterId: string
-  templateName: string
-  templateData: Record<string, any>
+  templateName: EmailTemplate
+  templateData: Record<string, unknown>
 }) {
   const supabase = await createClient()
   const { userId, letterId, templateName, templateData } = params

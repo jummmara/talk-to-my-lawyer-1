@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
@@ -9,6 +10,7 @@ import { Input } from './ui/input'
 import { RichTextEditor } from './ui/rich-text-editor'
 import type { Letter } from '@/lib/database.types'
 import { Wand2, Loader2 } from 'lucide-react'
+import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 
 export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { full_name: string; email: string } } }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -24,6 +26,14 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
   const [showAiInput, setShowAiInput] = useState(false)
   const router = useRouter()
 
+  const getAdminHeaders = async (includeContentType = true) => {
+    const csrfToken = await getAdminCsrfToken()
+    return {
+      ...(includeContentType ? { 'Content-Type': 'application/json' } : {}),
+      'x-csrf-token': csrfToken,
+    }
+  }
+
   // Helper function to convert HTML to plain text for API
   const htmlToPlainText = (html: string): string => {
     const tempDiv = document.createElement('div')
@@ -37,8 +47,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
     // Transition letter to under_review status
     if (letter.status === 'pending_review') {
       try {
+        const headers = await getAdminHeaders(false)
         await fetch(`/api/letters/${letter.id}/start-review`, {
-          method: 'POST'
+          method: 'POST',
+          headers
         })
         router.refresh()
       } catch (error) {
@@ -49,15 +61,16 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
 
   const handleAiImprove = async () => {
     if (!aiInstruction.trim()) {
-      alert('Please enter an improvement instruction')
+      toast.error('Please enter an improvement instruction')
       return
     }
 
     setAiImproving(true)
     try {
+      const headers = await getAdminHeaders()
       const response = await fetch(`/api/letters/${letter.id}/improve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content: htmlToPlainText(finalContent),
           instruction: aiInstruction
@@ -75,9 +88,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
       setFinalContent(htmlContent)
       setAiInstruction('')
       setShowAiInput(false)
+      toast.success('Letter improved with AI')
     } catch (error: any) {
       console.error('[v0] AI improvement error:', error)
-      alert(error.message || 'Failed to improve content with AI')
+      toast.error(error.message || 'Failed to improve content with AI')
     } finally {
       setAiImproving(false)
     }
@@ -85,14 +99,14 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
 
   const handleSubmit = async () => {
     if (!action) return
-    
+
     if (action === 'approve' && !htmlToPlainText(finalContent).trim()) {
-      alert('Final content is required for approval')
+      toast.error('Final content is required for approval')
       return
     }
-    
+
     if (action === 'reject' && !rejectionReason.trim()) {
-      alert('Rejection reason is required')
+      toast.error('Rejection reason is required')
       return
     }
     
@@ -106,9 +120,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
         ? { finalContent: htmlToPlainText(finalContent), reviewNotes }
         : { rejectionReason, reviewNotes }
 
+      const headers = await getAdminHeaders()
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
       })
 
@@ -121,7 +136,7 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
       router.refresh()
     } catch (error: any) {
       console.error('[v0] Review error:', error)
-      alert(error.message || 'Failed to update letter status')
+      toast.error(error.message || 'Failed to update letter status')
     } finally {
       setLoading(false)
     }
