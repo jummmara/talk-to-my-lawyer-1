@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
@@ -60,7 +61,7 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
 
   const handleAiImprove = async () => {
     if (!aiInstruction.trim()) {
-      alert('Please enter an improvement instruction')
+      toast.error('Please enter an improvement instruction')
       return
     }
 
@@ -87,9 +88,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
       setFinalContent(htmlContent)
       setAiInstruction('')
       setShowAiInput(false)
+      toast.success('Letter improved with AI')
     } catch (error: any) {
       console.error('[v0] AI improvement error:', error)
-      alert(error.message || 'Failed to improve content with AI')
+      toast.error(error.message || 'Failed to improve content with AI')
     } finally {
       setAiImproving(false)
     }
@@ -97,14 +99,14 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
 
   const handleSubmit = async () => {
     if (!action) return
-    
+
     if (action === 'approve' && !htmlToPlainText(finalContent).trim()) {
-      alert('Final content is required for approval')
+      toast.error('Final content is required for approval')
       return
     }
-    
+
     if (action === 'reject' && !rejectionReason.trim()) {
-      alert('Rejection reason is required')
+      toast.error('Rejection reason is required')
       return
     }
     
@@ -134,7 +136,7 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
       router.refresh()
     } catch (error: any) {
       console.error('[v0] Review error:', error)
-      alert(error.message || 'Failed to update letter status')
+      toast.error(error.message || 'Failed to update letter status')
     } finally {
       setLoading(false)
     }
