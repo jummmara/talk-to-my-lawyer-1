@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Email**: Resend (primary), with Brevo, SendGrid, and SMTP providers available
 - **Rate Limiting**: Upstash Redis
 - **Package Manager**: pnpm
+- **MCP Integrations**: Stripe, Vercel, and Supabase are connected via MCP (Model Context Protocol)
 
 ## Common Development Commands
 
