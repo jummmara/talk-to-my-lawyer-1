@@ -10,7 +10,6 @@ export interface AdminSession {
   email: string
   loginTime: number
   lastActivity: number
-  portalKeyVerified: boolean
 }
 
 /**
@@ -22,7 +21,6 @@ export async function createAdminSession(userId: string, email: string): Promise
     email,
     loginTime: Date.now(),
     lastActivity: Date.now(),
-    portalKeyVerified: true
   }
 
   const cookieStore = await cookies()
@@ -32,6 +30,13 @@ export async function createAdminSession(userId: string, email: string): Promise
     sameSite: 'lax',
     maxAge: 1800, // 30 minutes
     path: '/'
+  })
+
+  // Log admin login for audit trail
+  console.log('[AdminAuth] Admin session created:', {
+    userId,
+    email,
+    timestamp: new Date().toISOString()
   })
 }
 
