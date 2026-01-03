@@ -19,9 +19,46 @@ export async function POST(request: NextRequest) {
       return rateLimitResult // Rate limit exceeded
     }
 
-    // Verify user is authenticated
+    // Parse and validate input first (need accessToken early)
+    const body = await request.json()
+    const { email, role, fullName, userId, accessToken } = body
+
+    // Verify user is authenticated - either via session cookie or access token
     const supabase = await createServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let user = null
+    let authError = null
+
+    // Try session-based auth first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getUser()
+
+    if (!sessionError && sessionData.user) {
+      // Session auth succeeded
+      user = sessionData.user
+    } else if (accessToken && userId) {
+      // Fallback: use access token for immediate post-signup profile creation
+      // This handles the race condition where session cookie isn't set yet
+      const { createClient } = await import("@supabase/supabase-js")
+      const tempClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: {
+            persistSession: false
+          }
+        }
+      )
+
+      const { data: tokenData, error: tokenError } = await tempClient.auth.getUser(accessToken)
+
+      if (!tokenError && tokenData.user && tokenData.user.id === userId) {
+        user = tokenData.user
+        console.log('[CreateProfile] Authenticated via access token (post-signup flow)')
+      } else {
+        authError = tokenError || new Error('Token validation failed')
+      }
+    } else {
+      authError = sessionError || new Error('No session or access token provided')
+    }
 
     if (authError || !user) {
       console.error('[CreateProfile] Authentication error:', authError)
@@ -31,14 +68,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse and validate input
-    const body = await request.json()
-    const { email, role, fullName } = body
-
     // Ensure the userId from the request matches the authenticated user
-    if (body.userId && body.userId !== user.id) {
+    if (userId && userId !== user.id) {
       console.error('[CreateProfile] User ID mismatch:', {
-        requestUserId: body.userId,
+        requestUserId: userId,
         authenticatedUserId: user.id
       })
       return NextResponse.json(

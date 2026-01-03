@@ -85,6 +85,7 @@ export default function SignUpPage() {
 
       if (authData.user) {
         // Create profile using server API with service role
+        // Pass access token to handle race condition where session cookie isn't set yet
         try {
           const response = await fetch('/api/create-profile', {
             method: 'POST',
@@ -95,7 +96,8 @@ export default function SignUpPage() {
               userId: authData.user.id,
               email: authData.user.email || email,
               role: role,
-              fullName: fullName
+              fullName: fullName,
+              accessToken: authData.session?.access_token || null
             })
           })
 
