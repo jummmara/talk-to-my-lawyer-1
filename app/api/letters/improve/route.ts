@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
-import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { NextRequest, NextResponse } from "next/server"
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
+import { getOpenAIModel } from '@/lib/ai/openai-client'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Improve letter content with AI
     const { text: improvedContent } = await generateText({
-      model: openai("gpt-4-turbo"),
+      model: getOpenAIModel("gpt-4-turbo"),
       system: `You are a professional legal editor. Your task is to improve legal letters while maintaining their core message and legal integrity.
 
       Your improvements should:

@@ -5,30 +5,10 @@
  * Supports Vercel AI Gateway integration for improved observability and control
  */
 
-import { openai, createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { createHash, randomBytes } from "crypto"
 import { createAISpan, addSpanAttributes, recordSpanEvent } from '../monitoring/tracing'
-
-/**
- * Create an OpenAI client with optional Vercel AI Gateway support
- * If AI_GATEWAY_API_KEY is set, routes requests through Vercel AI Gateway
- */
-function getOpenAIClient() {
-  const gatewayApiKey = process.env.AI_GATEWAY_API_KEY
-
-  if (gatewayApiKey) {
-    // Use Vercel AI Gateway for enhanced observability and control
-    // The gateway provides: logging, rate limiting, cost tracking, caching, and fallback models
-    return createOpenAI({
-      baseURL: 'https://gateway.vercel.ai/api/providers/openai',
-      apiKey: gatewayApiKey,
-    })
-  }
-
-  // Direct OpenAI connection (fallback)
-  return openai()
-}
+import { getOpenAIModel } from './openai-client'
 
 export interface RetryConfig {
   maxRetries: number
@@ -226,7 +206,7 @@ export class OpenAIRetryClient {
           })
 
           const { text } = await generateText({
-            model: getOpenAIClient()(params.model || "gpt-4-turbo"),
+            model: getOpenAIModel(params.model || "gpt-4-turbo"),
             system: params.system || "You are a professional legal assistant.",
             prompt: params.prompt,
             temperature: params.temperature || 0.7,
