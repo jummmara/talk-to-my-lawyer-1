@@ -170,7 +170,7 @@ async function checkAuth(): Promise<ServiceStatus> {
 export async function GET(request: NextRequest): Promise<NextResponse<HealthCheckResponse>> {
   // Require Super Admin authentication to view detailed health information
   const authError = await requireSuperAdminAuth()
-  if (authError) return authError
+  if (authError) return authError as NextResponse<HealthCheckResponse>
 
   try {
     const [dbStatus, emailStatus, storageStatus, authStatus] = await Promise.all([

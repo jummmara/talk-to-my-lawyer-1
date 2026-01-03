@@ -105,13 +105,7 @@ export default async function UsersManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{subscribers}</div>
-            <div className="flex items-center gap-2 mt-1">
-              {superUsers > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {superUsers} super user{superUsers !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">Active subscribers</p>
           </CardContent>
         </Card>
 
