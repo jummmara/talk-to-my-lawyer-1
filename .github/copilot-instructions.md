@@ -24,7 +24,7 @@ pnpm validate-env     # Check environment variables
 ## Architecture Patterns
 
 ### API Route Structure
-All routes under `app/api/` follow this pattern (see [generate-letter/route.ts](app/api/generate-letter/route.ts)):
+All routes under `app/api/` follow this pattern (see [generate-letter/route.ts](/app/api/generate-letter/route.ts)):
 
 ```typescript
 import { createClient } from "@/lib/supabase/server"
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 ```
 
 ### Admin Routes
-Use `requireAdminAuth()` from [lib/auth/admin-guard.ts](lib/auth/admin-guard.ts):
+Use `requireAdminAuth()` from [lib/auth/admin-guard.ts](/lib/auth/admin-guard.ts):
 
 ```typescript
 import { requireAdminAuth } from '@/lib/auth/admin-guard'
@@ -65,20 +65,20 @@ if (authError) return authError
 - **Client components**: `import { createClient } from "@/lib/supabase/client"` (sync)
 
 ### Error Handling
-Use helpers from [lib/api/api-error-handler.ts](lib/api/api-error-handler.ts):
+Use helpers from [lib/api/api-error-handler.ts](/lib/api/api-error-handler.ts):
 - `errorResponses.unauthorized()`, `.forbidden()`, `.validation()`, `.notFound()`
 - `successResponse(data, status?)` for consistent JSON responses
 - `handleApiError(error, context)` in catch blocks
 
 ### Validation
-Use schema-based validation from [lib/validation/letter-schema.ts](lib/validation/letter-schema.ts):
+Use schema-based validation from [lib/validation/letter-schema.ts](/lib/validation/letter-schema.ts):
 ```typescript
 const validation = validateLetterGenerationRequest(letterType, intakeData)
 if (!validation.valid) return errorResponses.validation("Invalid input", validation.errors)
 ```
 
 ### Rate Limiting
-Predefined limiters in [lib/rate-limit-redis.ts](lib/rate-limit-redis.ts):
+Predefined limiters in [lib/rate-limit-redis.ts](/lib/rate-limit-redis.ts):
 - `authRateLimit` - 5/15min
 - `apiRateLimit` - 100/1min
 - `letterGenerationRateLimit` - 5/1hr
@@ -91,7 +91,14 @@ Falls back to in-memory when Upstash unavailable.
 ### User Roles (`profiles.role`)
 - `subscriber` - Generate letters, view own letters, manage subscription
 - `employee` - Coupon code (20% off), commission tracking (5%), never sees letters
-- `admin` - Review Center access, approve/reject letters, analytics, full visibility
+- `admin` - Two sub-roles via `profiles.admin_sub_role`:
+  - `system_admin` - Full access: Analytics, all users, all letters, coupon tracking, commission management
+  - `attorney_admin` - Limited access: Letter review center, profile settings only
+
+### Admin Role Helper Functions
+- `is_system_admin()` - Returns true for `role='admin'` AND `admin_sub_role='system_admin'`
+- `is_attorney_admin()` - Returns true for `role='admin'` AND `admin_sub_role='attorney_admin'`
+- `get_admin_dashboard_stats()` - Comprehensive stats for System Admin only
 
 ### Elevating a User to Admin
 Admins are never created through normal signup. Use one of these methods:
@@ -135,4 +142,4 @@ Admin login requires 3 factors: email + password + `ADMIN_PORTAL_KEY` environmen
 - Functional React components with hooks
 - `'use client'` directive only when interactive
 - shadcn/ui primitives in `components/ui/`
-- Tailwind for styling; use existing design tokens from [lib/design-tokens.ts](lib/design-tokens.ts)
+- Tailwind for styling; use existing design tokens from [lib/design-tokens.ts](/lib/design-tokens.ts)
