@@ -20,5 +20,6 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return handleAdminLetterAction(request, params, 'approve')
+  const { id } = await params
+  return handleAdminLetterAction(request, { id }, 'approve')
 }
