@@ -21,6 +21,7 @@
     "setup:github-secrets": "./scripts/setup-github-secrets.sh",
     "secrets:add": "./scripts/add-secrets-to-github.sh",
     "db:migrate": "node scripts/run-migrations.js",
+    "db:verify": "node scripts/verify-database-connection.js",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:fix": "./scripts/fix-security.sh",
     "security:scan": "node scripts/security-scan.js",
