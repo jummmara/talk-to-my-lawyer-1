@@ -60,8 +60,70 @@ export function isFreeTrialEligible(
 }
 
 /**
+ * Result of atomic check and deduct operation
+ */
+export interface AtomicDeductionResult {
+  success: boolean
+  remaining: number | null
+  errorMessage: string | null
+  isFreeTrial: boolean
+  isSuperAdmin: boolean
+}
+
+/**
+ * Atomically check eligibility AND deduct letter allowance in a single operation.
+ * This prevents race conditions where concurrent requests could pass the check
+ * and all deduct, resulting in over-generation.
+ *
+ * Uses the database-level SELECT FOR UPDATE lock to ensure atomicity.
+ */
+export async function checkAndDeductAllowance(userId: string): Promise<AtomicDeductionResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('check_and_deduct_allowance', {
+    u_id: userId,
+  })
+
+  if (error) {
+    console.error('[Allowance] check_and_deduct_allowance RPC failed:', error)
+    return {
+      success: false,
+      remaining: null,
+      errorMessage: error.message,
+      isFreeTrial: false,
+      isSuperAdmin: false,
+    }
+  }
+
+  // The RPC returns a single row with the results
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      remaining: null,
+      errorMessage: 'Failed to check allowance',
+      isFreeTrial: false,
+      isSuperAdmin: false,
+    }
+  }
+
+  const result = Array.isArray(data) ? data[0] : data
+
+  return {
+    success: result.success as boolean,
+    remaining: result.remaining as number | null,
+    errorMessage: result.error_message as string | null,
+    isFreeTrial: result.is_free_trial as boolean,
+    isSuperAdmin: result.is_super_admin as boolean,
+  }
+}
+
+/**
  * Comprehensive check for letter generation eligibility
  * Combines free trial and allowance checks
+ *
+ * @deprecated Use checkAndDeductAllowance() for atomic operations instead.
+ * This is kept for backward compatibility but should not be used for
+ * allowance deduction as it has race conditions.
  */
 export async function checkGenerationEligibility(
   userId: string
@@ -102,8 +164,8 @@ export async function checkGenerationEligibility(
 }
 
 /**
- * Deduct letter allowance with proper error handling
- * Returns true if deduction was successful
+ * @deprecated Use checkAndDeductAllowance() instead.
+ * This separate check-then-deduct pattern has a race condition.
  */
 export async function deductLetterAllowance(userId: string): Promise<{
   success: boolean
@@ -133,6 +195,7 @@ export async function deductLetterAllowance(userId: string): Promise<{
 
 /**
  * Refund letter allowance (e.g., after failed generation)
+ * Uses atomic database operation
  */
 export async function refundLetterAllowance(
   userId: string,
@@ -140,46 +203,26 @@ export async function refundLetterAllowance(
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
-  const { error } = await supabase.rpc('add_letter_allowances', {
+  const { data, error } = await supabase.rpc('refund_letter_allowance', {
     u_id: userId,
     amount,
   })
 
-  if (!error) {
-    return { success: true }
-  }
-
-  console.warn('[Allowance] add_letter_allowances RPC failed, falling back to manual refund:', error.message)
-
-  const { data: subscription, error: subscriptionError } = await supabase
-    .from('subscriptions')
-    .select('id, credits_remaining, remaining_letters')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (subscriptionError || !subscription) {
+  if (error) {
+    console.error('[Allowance] refund_letter_allowance RPC failed:', error)
     return {
       success: false,
-      error: subscriptionError?.message || 'No active subscription found for refund',
+      error: error.message,
     }
   }
 
-  const { error: updateError } = await supabase
-    .from('subscriptions')
-    .update({
-      credits_remaining: (subscription.credits_remaining || 0) + amount,
-      remaining_letters: (subscription.remaining_letters || 0) + amount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', subscription.id)
+  // The RPC returns a table with success and error_message
+  const result = Array.isArray(data) ? data[0] : data
 
-  if (updateError) {
+  if (!result || !result.success) {
     return {
       success: false,
-      error: updateError.message,
+      error: result?.error_message || 'Refund failed',
     }
   }
 

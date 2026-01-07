@@ -157,29 +157,16 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Update employee coupon usage count (skip for special promo codes)
+          // Update employee coupon usage count atomically (skip for special promo codes)
           if (couponCode && couponCode !== 'TALK3') {
-            const { data: currentCoupon } = await supabase
-              .from('employee_coupons')
-              .select('usage_count, employee_id')
-              .eq('code', couponCode)
-              .maybeSingle()
+            const { error: incrementError } = await supabase.rpc('increment_coupon_usage_by_code', {
+              coupon_code: couponCode,
+            })
 
-            // Only update usage count if this coupon belongs to the referring employee
-            if (currentCoupon && currentCoupon.employee_id === employeeId) {
-              const { error: updateError } = await supabase
-                .from('employee_coupons')
-                .update({
-                  usage_count: (currentCoupon.usage_count || 0) + 1,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('code', couponCode)
-
-              if (updateError) {
-                console.error('[StripeWebhook] Failed to update coupon usage count:', updateError)
-              } else {
-                console.log(`[StripeWebhook] Updated usage count for coupon ${couponCode}: ${(currentCoupon.usage_count || 0) + 1}`)
-              }
+            if (incrementError) {
+              console.error('[StripeWebhook] Failed to update coupon usage count:', incrementError)
+            } else {
+              console.log(`[StripeWebhook] Incremented usage count for coupon ${couponCode}`)
             }
           }
         }

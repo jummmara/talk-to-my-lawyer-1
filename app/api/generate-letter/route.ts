@@ -18,11 +18,9 @@ import { getAdminEmails } from '@/lib/admin/letter-actions'
 import { sendTemplateEmail } from '@/lib/email/service'
 import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 import {
-  checkGenerationEligibility,
-  deductLetterAllowance,
+  checkAndDeductAllowance,
   refundLetterAllowance,
   incrementTotalLetters,
-  shouldSkipDeduction,
 } from '@/lib/services/allowance-service'
 import type { LetterGenerationResponse } from '@/lib/types/letter.types'
 import { createBusinessSpan, createDatabaseSpan, createAISpan, addSpanAttributes, recordSpanEvent } from '@/lib/monitoring/tracing'
@@ -85,17 +83,7 @@ export async function POST(request: NextRequest) {
       return errorResponses.forbidden("Only subscribers can generate letters")
     }
 
-    // 4. Check generation eligibility (free trial, allowance, super user)
-    const eligibility = await checkGenerationEligibility(user.id)
-
-    if (!eligibility.canGenerate) {
-      return errorResponses.validation(
-        eligibility.reason || "No letter credits remaining",
-        { needsSubscription: true }
-      )
-    }
-
-    // 5. Parse and validate request body
+    // 4. Parse and validate request body (before allowance deduction)
     const body = await request.json()
     const { letterType, intakeData } = body
 
@@ -108,25 +96,28 @@ export async function POST(request: NextRequest) {
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
-    // 6. Check API configuration
+    // 5. Check API configuration
     if (!process.env.OPENAI_API_KEY) {
       console.error("[GenerateLetter] Missing OPENAI_API_KEY")
       return errorResponses.serverError("Server configuration error")
     }
 
-    // 7. Deduct allowance BEFORE generation (skip for free trial/super user)
-    if (!shouldSkipDeduction(eligibility)) {
-      const deductionResult = await deductLetterAllowance(user.id)
+    // 6. Atomically check eligibility AND deduct allowance in a single operation
+    // This prevents race conditions where concurrent requests could over-generate letters
+    const deductionResult = await checkAndDeductAllowance(user.id)
 
-      if (!deductionResult.success || !deductionResult.wasDeducted) {
-        return errorResponses.validation(
-          deductionResult.error || "No letter allowances remaining",
-          { needsSubscription: true }
-        )
-      }
+    if (!deductionResult.success) {
+      return errorResponses.validation(
+        deductionResult.errorMessage || "No letter credits remaining",
+        { needsSubscription: true }
+      )
     }
 
-    // 8. Create letter record with 'generating' status
+    // Track eligibility for refund logic
+    const isFreeTrial = deductionResult.isFreeTrial
+    const isSuperAdmin = deductionResult.isSuperAdmin
+
+    // 7. Create letter record with 'generating' status
     const { data: newLetter, error: insertError } = await supabase
       .from("letters")
       .insert({
@@ -144,8 +135,8 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error("[GenerateLetter] Database insert error:", insertError)
 
-      // Refund if we deducted
-      if (!shouldSkipDeduction(eligibility)) {
+      // Refund if we deducted (not free trial or super admin)
+      if (!isFreeTrial && !isSuperAdmin) {
         await refundLetterAllowance(user.id, 1)
       }
 
@@ -194,7 +185,7 @@ export async function POST(request: NextRequest) {
         success: true,
         letterId: newLetter.id,
         status: "pending_review",
-        isFreeTrial: eligibility.isFreeTrial,
+        isFreeTrial: isFreeTrial,
         aiDraft: generatedContent,
       })
 
@@ -204,7 +195,8 @@ export async function POST(request: NextRequest) {
         newLetter.id,
         user.id,
         generationError,
-        eligibility
+        isFreeTrial,
+        isSuperAdmin
       )
     }
 
@@ -313,7 +305,8 @@ async function handleGenerationFailure(
   letterId: string,
   userId: string,
   error: unknown,
-  eligibility: Awaited<ReturnType<typeof checkGenerationEligibility>>
+  isFreeTrial: boolean,
+  isSuperAdmin: boolean
 ) {
   console.error("[GenerateLetter] Generation failed:", error)
 
@@ -326,8 +319,8 @@ async function handleGenerationFailure(
     })
     .eq("id", letterId)
 
-  // Refund if we deducted
-  if (!shouldSkipDeduction(eligibility)) {
+  // Refund if we deducted (not free trial or super admin)
+  if (!isFreeTrial && !isSuperAdmin) {
     await refundLetterAllowance(userId, 1)
   }
 

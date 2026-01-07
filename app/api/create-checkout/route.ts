@@ -235,23 +235,13 @@ export async function POST(request: NextRequest) {
           console.error('[Checkout] Commission creation error:', commissionError)
         }
 
-        // Update coupon usage count
-        const { data: currentCoupon } = await supabase
-          .from('employee_coupons')
-          .select('usage_count')
-          .eq('code', couponCode)
-          .maybeSingle()
+        // Update coupon usage count atomically (prevents race condition)
+        const { error: incrementError } = await supabase.rpc('increment_coupon_usage_by_code', {
+          coupon_code: couponCode,
+        })
 
-        const { error: updateError } = await supabase
-          .from('employee_coupons')
-          .update({
-            usage_count: (currentCoupon?.usage_count || 0) + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('code', couponCode)
-
-        if (updateError) {
-          console.error('[Checkout] Coupon update error:', updateError)
+        if (incrementError) {
+          console.error('[Checkout] Coupon usage increment error:', incrementError)
         }
       }
 
@@ -319,20 +309,14 @@ export async function POST(request: NextRequest) {
             status: 'pending'
           })
 
-        // Update coupon usage count
-        const { data: currentCoupon } = await supabase
-          .from('employee_coupons')
-          .select('usage_count')
-          .eq('code', couponCode)
-          .maybeSingle()
-
-        await supabase
-          .from('employee_coupons')
-          .update({
-            usage_count: (currentCoupon?.usage_count || 0) + 1,
-            updated_at: new Date().toISOString()
+        // Update coupon usage count atomically (prevents race condition)
+        if (couponCode) {
+          await supabase.rpc('increment_coupon_usage_by_code', {
+            coupon_code: couponCode,
+          }).catch((err) => {
+            console.error('[Checkout] TEST MODE: Coupon usage increment error:', err)
           })
-          .eq('code', couponCode)
+        }
       }
 
       console.log('[Checkout] TEST MODE: Payment simulated successfully')
