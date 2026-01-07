@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
 
 /**
  * POST /api/gdpr/delete-account
@@ -17,6 +18,12 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting (10 requests per 15 minutes)
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 10, "15 m")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient()
 
     // Check authentication

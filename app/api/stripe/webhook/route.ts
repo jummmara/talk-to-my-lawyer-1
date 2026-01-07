@@ -59,10 +59,13 @@ export async function POST(request: NextRequest) {
     if (idempotencyError) {
       console.error('[StripeWebhook] Idempotency check failed:', idempotencyError)
       // Continue processing if check fails - better to process twice than miss an event
-    } else if (idempotencyCheck && idempotencyCheck[0]?.already_processed) {
-      console.log('[StripeWebhook] Event already processed, skipping:', event.id)
-      // Return success to acknowledge receipt without re-processing
-      return NextResponse.json({ received: true, already_processed: true })
+    } else {
+      const checkResult = idempotencyCheck?.[0]
+      if (checkResult && checkResult.already_processed === true) {
+        console.log('[StripeWebhook] Event already processed, skipping:', event.id)
+        // Return success to acknowledge receipt without re-processing
+        return NextResponse.json({ received: true, already_processed: true })
+      }
     }
 
     switch (event.type) {

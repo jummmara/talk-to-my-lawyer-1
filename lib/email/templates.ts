@@ -1,5 +1,38 @@
 import type { EmailTemplate, TemplateData } from './types'
 
+/**
+ * HTML escape utility to prevent XSS in email templates.
+ * Escapes special HTML characters to their entity equivalents.
+ *
+ * This prevents malicious user input from being rendered as HTML
+ * which could lead to email spoofing, XSS in vulnerable email clients,
+ * or other security issues.
+ */
+function escapeHtml(text: string | number | undefined | null): string {
+  if (text === undefined || text === null) return ''
+  const str = String(text)
+
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+    '/': '&#x2F;',
+    '`': '&#96;',
+  }
+
+  return str.replace(/[&<>"'/`]/g, (char) => htmlEntities[char] || char)
+}
+
+/**
+ * Convert newlines to <br> tags for multi-line content in HTML emails.
+ * Applied after HTML escaping to maintain formatting while preserving security.
+ */
+function nl2br(text: string | number | undefined | null): string {
+  return escapeHtml(text).replace(/\n/g, '<br>')
+}
+
 interface TemplateOutput {
   subject: string
   text: string
@@ -65,7 +98,7 @@ Best regards,
 The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
-      <h2>Welcome, ${data.userName || 'there'}!</h2>
+      <h2>Welcome, ${escapeHtml(data.userName || 'there')}!</h2>
       <p>Thank you for signing up for Talk-To-My-Lawyer. You now have access to professional legal letter generation services with attorney review.</p>
 
       <div class="highlight">
@@ -81,7 +114,7 @@ The Talk-To-My-Lawyer Team
       </ol>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl || 'https://talk-to-my-lawyer.com/dashboard'}" class="button">Go to Dashboard</a>
+        <a href="${escapeHtml(data.actionUrl || 'https://talk-to-my-lawyer.com/dashboard')}" class="button">Go to Dashboard</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -109,7 +142,7 @@ The Talk-To-My-Lawyer Team
       <p>We received a request to reset your password. Click the button below to create a new password:</p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">Reset Password</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">Reset Password</a>
       </p>
 
       <p><small>If you didn't request this, you can safely ignore this email. This link will expire in 1 hour.</small></p>
@@ -119,7 +152,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'letter-approved': (data) => ({
-    subject: `Your Letter Has Been Approved - ${data.letterTitle || 'Legal Letter'}`,
+    subject: `Your Letter Has Been Approved - ${escapeHtml(data.letterTitle || 'Legal Letter')}`,
     text: `
 Good news, ${data.userName || 'there'}!
 
@@ -137,10 +170,10 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Your Letter Has Been Approved!</h2>
-      <p>Good news, ${data.userName || 'there'}!</p>
+      <p>Good news, ${escapeHtml(data.userName || 'there')}!</p>
 
       <div class="highlight">
-        <strong>"${data.letterTitle || 'Legal Letter'}"</strong> has been reviewed and approved by our attorney.
+        <strong>"${escapeHtml(data.letterTitle || 'Legal Letter')}"</strong> has been reviewed and approved by our attorney.
       </div>
 
       <h3>What's next?</h3>
@@ -151,7 +184,7 @@ The Talk-To-My-Lawyer Team
       </ul>
 
       <p style="text-align: center;">
-        <a href="${data.letterLink || data.actionUrl}" class="button">View Your Letter</a>
+        <a href="${escapeHtml(data.letterLink || data.actionUrl || '')}" class="button">View Your Letter</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -159,7 +192,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'letter-rejected': (data) => ({
-    subject: `Action Required: Letter Needs Revision - ${data.letterTitle || 'Legal Letter'}`,
+    subject: `Action Required: Letter Needs Revision - ${escapeHtml(data.letterTitle || 'Legal Letter')}`,
     text: `
 Hello ${data.userName || 'there'},
 
@@ -176,17 +209,17 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Your Letter Needs Revision</h2>
-      <p>Hello ${data.userName || 'there'},</p>
+      <p>Hello ${escapeHtml(data.userName || 'there')},</p>
 
-      <p>Your letter <strong>"${data.letterTitle || 'Legal Letter'}"</strong> requires some changes before it can be approved.</p>
+      <p>Your letter <strong>"${escapeHtml(data.letterTitle || 'Legal Letter')}"</strong> requires some changes before it can be approved.</p>
 
       <div class="highlight">
         <strong>Feedback:</strong><br>
-        ${data.alertMessage || 'Please review the feedback in your dashboard.'}
+        ${nl2br(data.alertMessage || 'Please review the feedback in your dashboard.')}
       </div>
 
       <p style="text-align: center;">
-        <a href="${data.letterLink || data.actionUrl}" class="button">Review Feedback</a>
+        <a href="${escapeHtml(data.letterLink || data.actionUrl || '')}" class="button">Review Feedback</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -194,7 +227,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'commission-earned': (data) => ({
-    subject: `Commission Earned - $${(data.commissionAmount || 0).toFixed(2)}`,
+    subject: `Commission Earned - $${escapeHtml((data.commissionAmount || 0).toFixed(2))}`,
     text: `
 Congratulations, ${data.userName || 'there'}!
 
@@ -211,16 +244,16 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Commission Earned!</h2>
-      <p>Congratulations, ${data.userName || 'there'}!</p>
+      <p>Congratulations, ${escapeHtml(data.userName || 'there')}!</p>
 
       <div class="highlight">
-        <strong>New Commission:</strong> $${(data.commissionAmount || 0).toFixed(2)}
+        <strong>New Commission:</strong> $${escapeHtml((data.commissionAmount || 0).toFixed(2))}
       </div>
 
       <p>This has been added to your pending balance. View your earnings in the dashboard.</p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">View Earnings</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">View Earnings</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -243,16 +276,16 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Subscription Confirmed!</h2>
-      <p>Thank you for your subscription, ${data.userName || 'there'}!</p>
+      <p>Thank you for your subscription, ${escapeHtml(data.userName || 'there')}!</p>
 
       <div class="highlight">
-        <strong>Your Plan:</strong> ${data.subscriptionPlan || 'Legal Letters Plan'}
+        <strong>Your Plan:</strong> ${escapeHtml(data.subscriptionPlan || 'Legal Letters Plan')}
       </div>
 
       <p>You now have access to generate professional legal letters with attorney review.</p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">Go to Dashboard</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">Go to Dashboard</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -273,12 +306,12 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Subscription Renewal Reminder</h2>
-      <p>Hello ${data.userName || 'there'},</p>
+      <p>Hello ${escapeHtml(data.userName || 'there')},</p>
 
-      <p>Your <strong>${data.subscriptionPlan || 'subscription'}</strong> is coming up for renewal soon.</p>
+      <p>Your <strong>${escapeHtml(data.subscriptionPlan || 'subscription')}</strong> is coming up for renewal soon.</p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">Manage Subscription</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">Manage Subscription</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -303,7 +336,7 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Password Successfully Reset</h2>
-      <p>Hi ${data.userName || 'there'},</p>
+      <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
       <div class="highlight">
         <strong>Your password has been successfully reset</strong> for your Talk-To-My-Lawyer account.
@@ -312,7 +345,7 @@ The Talk-To-My-Lawyer Team
       <p>If you didn't make this change, please contact our support team immediately.</p>
 
       <p style="text-align: center;">
-        <a href="${data.loginUrl || 'https://talk-to-my-lawyer.com/auth/login'}" class="button">Login with New Password</a>
+        <a href="${escapeHtml(data.loginUrl || 'https://talk-to-my-lawyer.com/auth/login')}" class="button">Login with New Password</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -320,7 +353,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'letter-generated': (data) => ({
-    subject: `Your Legal Letter is Ready for Review - ${data.letterTitle || 'Legal Letter'}`,
+    subject: `Your Legal Letter is Ready for Review - ${escapeHtml(data.letterTitle || 'Legal Letter')}`,
     text: `
     Your Letter is Ready for Review
 
@@ -343,9 +376,9 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Your Legal Letter is Ready for Review!</h2>
-      <p>Hi ${data.userName || 'there'},</p>
+      <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
-      <p>Great news! Your legal letter <strong>"${data.letterTitle || 'Legal Letter'}"</strong> has been generated by our AI and is now ready for attorney review.</p>
+      <p>Great news! Your legal letter <strong>"${escapeHtml(data.letterTitle || 'Legal Letter')}"</strong> has been generated by our AI and is now ready for attorney review.</p>
 
       <div class="highlight">
         <strong>What happens next?</strong>
@@ -360,7 +393,7 @@ The Talk-To-My-Lawyer Team
       <p><small>This usually takes 24-48 hours during business hours.</small></p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">Track Letter Status</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">Track Letter Status</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -368,7 +401,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'letter-under-review': (data) => ({
-    subject: `Your Letter is Under Review - ${data.letterTitle || 'Legal Letter'}`,
+    subject: `Your Letter is Under Review - ${escapeHtml(data.letterTitle || 'Legal Letter')}`,
     text: `
     Your Letter is Under Review
 
@@ -389,19 +422,19 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Your Letter is Under Review</h2>
-      <p>Hi ${data.userName || 'there'},</p>
+      <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
-      <p>Your letter <strong>"${data.letterTitle || 'Legal Letter'}"</strong> is currently under review by our licensed attorneys.</p>
+      <p>Your letter <strong>"${escapeHtml(data.letterTitle || 'Legal Letter')}"</strong> is currently under review by our licensed attorneys.</p>
 
       <div class="highlight">
-        <strong>Current Status:</strong> ${data.alertMessage || 'Being reviewed for legal compliance and accuracy'}
-        <br><small>There are ${data.pendingReviews || '1'} letters pending in the queue.</small>
+        <strong>Current Status:</strong> ${nl2br(data.alertMessage || 'Being reviewed for legal compliance and accuracy')}
+        <br><small>There are ${escapeHtml(String(data.pendingReviews || '1'))} letters pending in the queue.</small>
       </div>
 
       <p>We'll notify you as soon as the review is complete. You can track the progress in your dashboard.</p>
 
       <p style="text-align: center;">
-        <a href="${data.letterLink || data.actionUrl}" class="button">Track Progress</a>
+        <a href="${escapeHtml(data.letterLink || data.actionUrl || '')}" class="button">Track Progress</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -409,7 +442,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'commission-paid': (data) => ({
-    subject: `Commission Paid - $${(data.commissionAmount || 0).toFixed(2)}`,
+    subject: `Commission Paid - $${escapeHtml((data.commissionAmount || 0).toFixed(2))}`,
     text: `
     Commission Payment Processed
 
@@ -428,10 +461,10 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Commission Paid!</h2>
-      <p>Hi ${data.userName || 'there'},</p>
+      <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
       <div class="highlight">
-        <strong>Payment Processed:</strong> $${(data.commissionAmount || 0).toFixed(2)}
+        <strong>Payment Processed:</strong> $${escapeHtml((data.commissionAmount || 0).toFixed(2))}
       </div>
 
       <p>Good news! A commission payment has been processed and added to your available balance.</p>
@@ -439,7 +472,7 @@ The Talk-To-My-Lawyer Team
       <p>Thank you for your contributions!</p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">View Earnings</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">View Earnings</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -447,7 +480,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'subscription-cancelled': (data) => {
-    const plan = data.subscriptionPlan || 'subscription'
+    const plan = escapeHtml(data.subscriptionPlan || 'subscription')
     return {
       subject: `Subscription Cancelled - Talk-To-My-Lawyer`,
       text: `
@@ -470,7 +503,7 @@ The Talk-To-My-Lawyer Team
       `.trim(),
       html: wrapHtml(`
         <h2>Subscription Cancelled</h2>
-        <p>Hi ${data.userName || 'there'},</p>
+        <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
         <p>Your <strong>${plan}</strong> has been cancelled as per your request.</p>
 
@@ -481,7 +514,7 @@ The Talk-To-My-Lawyer Team
         <p>If you change your mind, you can reactivate your subscription at any time.</p>
 
         <p style="text-align: center;">
-          <a href="${data.actionUrl}" class="button">Manage Subscriptions</a>
+          <a href="${escapeHtml(data.actionUrl || '')}" class="button">Manage Subscriptions</a>
         </p>
 
         <p>Thank you for being part of Talk-To-My-Lawyer!</p>
@@ -490,8 +523,8 @@ The Talk-To-My-Lawyer Team
   },
 
   'payment-failed': (data) => {
-    const plan = data.subscriptionPlan || 'subscription'
-    const amount = data.amountDue || 'Your plan amount'
+    const plan = escapeHtml(data.subscriptionPlan || 'subscription')
+    const amount = escapeHtml(String(data.amountDue || 'Your plan amount'))
     return {
       subject: `Payment Failed - Talk-To-My-Lawyer`,
       text: `
@@ -518,7 +551,7 @@ The Talk-To-My-Lawyer Team
       `.trim(),
       html: wrapHtml(`
         <h2>Payment Failed</h2>
-        <p>Hi ${data.userName || 'there'},</p>
+        <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
         <p>We were unable to process your payment for the <strong>${plan}</strong>.</p>
 
@@ -535,7 +568,7 @@ The Talk-To-My-Lawyer Team
         </ul>
 
         <p style="text-align: center;">
-          <a href="${data.actionUrl}" class="button">Update Payment Method</a>
+          <a href="${escapeHtml(data.actionUrl || '')}" class="button">Update Payment Method</a>
         </p>
 
         <p>If you continue to experience issues, please contact our support team.</p>
@@ -568,12 +601,12 @@ The Talk-To-My-Lawyer Team
     `.trim(),
     html: wrapHtml(`
       <h2>Account Suspended</h2>
-      <p>Hi ${data.userName || 'there'},</p>
+      <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
       <p>Your Talk-To-My-Lawyer account has been suspended.</p>
 
       <div class="highlight">
-        <strong>Reason:</strong> ${data.suspensionReason || 'Policy violation'}
+        <strong>Reason:</strong> ${nl2br(data.suspensionReason || 'Policy violation')}
       </div>
 
       <p><strong>Next steps:</strong></p>
@@ -584,7 +617,7 @@ The Talk-To-My-Lawyer Team
       </ul>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button">Contact Support</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button">Contact Support</a>
       </p>
 
       <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -592,7 +625,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'free-trial-ending': (data) => {
-    const days = data.trialDaysRemaining || 0
+    const days = Number(data.trialDaysRemaining) || 0
     return {
       subject: `Free Trial Ending - ${days} Days Left`,
       text: `
@@ -617,7 +650,7 @@ The Talk-To-My-Lawyer Team
       `.trim(),
       html: wrapHtml(`
         <h2>Free Trial Ending Soon</h2>
-        <p>Hi ${data.userName || 'there'},</p>
+        <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
         <p>Your free trial is ending in <strong>${days} day${days === 1 ? '' : 's'}</strong>.</p>
 
@@ -632,7 +665,7 @@ The Talk-To-My-Lawyer Team
         </div>
 
         <p style="text-align: center;">
-          <a href="${data.actionUrl}" class="button">Upgrade Now</a>
+          <a href="${escapeHtml(data.actionUrl || '')}" class="button">Upgrade Now</a>
         </p>
 
         <p>Upgrade before your trial ends to keep your access.</p>
@@ -643,8 +676,8 @@ The Talk-To-My-Lawyer Team
   },
 
   'onboarding-complete': (data) => {
-    const completed = data.completedSteps || 0
-    const total = data.totalSteps || 4
+    const completed = Number(data.completedSteps) || 0
+    const total = Number(data.totalSteps) || 4
     return {
       subject: `Welcome Aboard! You're ${Math.round((completed / total) * 100)}% Complete`,
       text: `
@@ -666,7 +699,7 @@ The Talk-To-My-Lawyer Team
       `.trim(),
       html: wrapHtml(`
         <h2>Welcome Aboard! 🎉</h2>
-        <p>Hi ${data.userName || 'there'},</p>
+        <p>Hi ${escapeHtml(data.userName || 'there')},</p>
 
         <div class="highlight">
           <p><strong>Progress: ${Math.round((completed / total) * 100)}%</strong></p>
@@ -676,7 +709,7 @@ The Talk-To-My-Lawyer Team
         <p>Great job getting started! If you need any help or have questions, our support team is here for you.</p>
 
         <p style="text-align: center;">
-          <a href="${data.actionUrl}" class="button">Continue Your Journey</a>
+          <a href="${escapeHtml(data.actionUrl || '')}" class="button">Continue Your Journey</a>
         </p>
 
         <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
@@ -685,7 +718,7 @@ The Talk-To-My-Lawyer Team
   },
 
   'security-alert': (data) => ({
-    subject: `⚠️ Security Alert: ${data.alertMessage || 'Security Issue Detected'}`,
+    subject: `⚠️ Security Alert: ${escapeHtml(data.alertMessage || 'Security Issue Detected')}`,
     text: `
     Security Alert
 
@@ -702,13 +735,13 @@ The Talk-To-My-Lawyer Team
       <h2>⚠️ Security Alert</h2>
 
       <div class="highlight" style="border-left: 4px solid #dc2626; background: #fef2f2;">
-        <p><strong>Security Alert:</strong> ${data.alertMessage || 'A security event has been detected that requires immediate attention.'}</p>
+        <p><strong>Security Alert:</strong> ${nl2br(data.alertMessage || 'A security event has been detected that requires immediate attention.')}</p>
       </div>
 
       <p><strong>Immediate Action Required:</strong></p>
 
       <p style="text-align: center;">
-        <a href="${data.actionUrl}" class="button" style="background-color: #dc2626;">Review Alert</a>
+        <a href="${escapeHtml(data.actionUrl || '')}" class="button" style="background-color: #dc2626;">Review Alert</a>
       </p>
 
       <p>Please review this alert immediately and take appropriate action.</p>
@@ -718,7 +751,7 @@ The Talk-To-My-Lawyer Team
   }),
 
   'system-maintenance': (data) => {
-    const duration = data.alertMessage?.match(/(\d+ hours?)/)?.[1] || '2 hours'
+    const duration = String(data.alertMessage || '').match(/(\d+ hours?)/)?.[1] || '2 hours'
     return {
       subject: `Scheduled Maintenance - ${duration}`,
       text: `
@@ -741,7 +774,7 @@ The Talk-To-My-Lawyer Team
       html: wrapHtml(`
         <h2>🔧 Scheduled Maintenance</h2>
 
-        <p>We'll be performing scheduled maintenance for approximately <strong>${duration}</strong>.</p>
+        <p>We'll be performing scheduled maintenance for approximately <strong>${escapeHtml(duration)}</strong>.</p>
 
         <div class="highlight">
           <p>During this time:</p>
@@ -761,7 +794,7 @@ The Talk-To-My-Lawyer Team
     }
   },
   'admin-alert': (data) => ({
-    subject: `Admin Alert: ${data.alertMessage || 'System Notification'}`,
+    subject: `Admin Alert: ${escapeHtml(data.alertMessage || 'System Notification')}`,
     text: `
       Admin Alert
 
@@ -779,12 +812,12 @@ The Talk-To-My-Lawyer Team
       <h2>⚠️ Admin Alert</h2>
 
       <div class="highlight">
-        <p>${data.alertMessage || 'A system event requires your attention.'}</p>
+        <p>${nl2br(data.alertMessage || 'A system event requires your attention.')}</p>
       </div>
 
-      ${data.pendingReviews ? `<p><strong>Pending Reviews:</strong> ${data.pendingReviews}</p>` : ''}
+      ${data.pendingReviews ? `<p><strong>Pending Reviews:</strong> ${escapeHtml(String(data.pendingReviews))}</p>` : ''}
 
-      ${data.actionUrl ? `<a href="${data.actionUrl}" class="button">Take Action</a>` : ''}
+      ${data.actionUrl ? `<a href="${escapeHtml(data.actionUrl || '')}" class="button">Take Action</a>` : ''}
 
       <p>Please review and take appropriate action.</p>
 
