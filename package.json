@@ -7,7 +7,7 @@
     "predeploy:check": "node scripts/pre-deploy-check.js",
     "precommit": "pnpm lint && pnpm audit --audit-level=high",
     "hooks:install": "./scripts/install-git-hooks.sh",
-    "build": "next build",
+    "build": "pnpm build",
     "dev": "next dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
